@@ -9,6 +9,14 @@ export type Room = {
   centerId: string
 }
 
+export type TeamMember = {
+  id: string
+  name: string
+  roles: string[]
+  type: 'OWNED' | 'THIRD_PARTY'
+  available?: boolean
+}
+
 export type Booking = {
   id: string
   title: string
@@ -20,6 +28,7 @@ export type Booking = {
   patientName: string
   surgeryType: string
   urgency: 'low' | 'medium' | 'high' | 'emergency'
+  team?: TeamMember[]
 }
 
 const centers: SurgeryCenter[] = [

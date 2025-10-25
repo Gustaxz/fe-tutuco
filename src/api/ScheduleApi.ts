@@ -1,8 +1,8 @@
 import axios from 'axios'
-import type { Booking } from './ScheduleMock'
+import type { Booking, TeamMember } from './ScheduleMock'
 
 const API_BASE_URL = 'https://project.freshroots.com.br'
-const HOSPITAL_ID = 'a107b09d-c9b3-492c-a046-c15459b3716f'
+const HOSPITAL_ID = '5582b1bd-11db-46cb-9cc2-dacbbfb9b029'
 
 // API Response Types
 interface ApiRoom {
@@ -155,6 +155,15 @@ export const ScheduleApiService = {
           urgency = 'high'
         }
 
+        // Transform team members with mock availability status
+        const team: TeamMember[] = surgery.team.map(member => ({
+          id: member.id,
+          name: member.name,
+          roles: member.role,
+          type: member.type,
+          available: Math.random() > 0.2, // Mock: 80% chance of being available
+        }))
+
         return {
           id: surgery.id,
           title: `Cirurgia - ${surgery.ocupation.id_room}`,
@@ -166,6 +175,7 @@ export const ScheduleApiService = {
           patientName: 'Paciente', // Not provided by API, placeholder
           surgeryType: 'Cirurgia Geral', // Not provided by API, placeholder
           urgency,
+          team,
         } as Booking
       })
 
