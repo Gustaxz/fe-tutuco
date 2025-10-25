@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ComponentType } from 'react'
 import { ScheduleService, type Booking, type Room, type SurgeryCenter } from './api/ScheduleService'
 import { DatePicker } from './components/ui/date-picker'
 import { Button } from './components/ui/button'
+import { Building2, Landmark, Home } from 'lucide-react'
 
 function formatHourLabel(hour: number): string {
   return `${hour.toString().padStart(2, '0')}:00`
@@ -20,6 +21,11 @@ function parseTimeToMinutes(time24h: string): number {
   return h * 60 + m
 }
 
+function isoToDate(iso: string): Date {
+  const [y, m, d] = iso.split('-').map(Number)
+  return new Date(y, (m || 1) - 1, d || 1)
+}
+
 function App() {
   const [centers, setCenters] = useState<SurgeryCenter[]>([])
   const [allRooms, setAllRooms] = useState<Room[]>([])
@@ -33,6 +39,8 @@ function App() {
   const hours = useMemo(() => Array.from({ length: 24 }, (_, i) => i), [])
   const rowHeightPx = 56
   const pxPerMinute = rowHeightPx / 60
+
+  const [slideClass, setSlideClass] = useState<string>('')
 
   useEffect(() => {
     let mounted = true
@@ -68,6 +76,25 @@ function App() {
   const centerIdToName = useMemo(() => {
     const m = new Map<string, string>()
     centers.forEach(c => m.set(c.id, c.name))
+    return m
+  }, [centers])
+
+  const centerIdToStyle = useMemo(() => {
+    // deterministic style mapping per center id
+    const palette = [
+      { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', badge: 'bg-blue-600' },
+      { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', badge: 'bg-emerald-600' },
+      { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', badge: 'bg-amber-600' },
+      { bg: 'bg-violet-50', text: 'text-violet-700', border: 'border-violet-200', badge: 'bg-violet-600' },
+      { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200', badge: 'bg-rose-600' },
+    ] as const
+    const icons = [Building2, Landmark, Home] as const
+    const m = new Map<string, { bg: string, text: string, border: string, badge: string, Icon: ComponentType<{ className?: string }> }>()
+    centers.forEach((c, idx) => {
+      const style = palette[idx % palette.length]
+      const Icon = icons[idx % icons.length]
+      m.set(c.id, { ...style, Icon })
+    })
     return m
   }, [centers])
 
@@ -107,14 +134,20 @@ function App() {
     setSelectedRoomIds([])
   }
 
+  function changeDate(nextIso: string) {
+    const next = isoToDate(nextIso)
+    const curr = isoToDate(selectedDate)
+    setSlideClass(next.getTime() > curr.getTime() ? 'slide-in-left' : 'slide-in-right')
+    setSelectedDate(nextIso)
+  }
+
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-end gap-2">
         <div className="flex flex-col">
-          <label className="text-sm text-gray-600">Day</label>
           <div className="flex items-center gap-2">
-            <DatePicker value={selectedDate} onChange={setSelectedDate} />
-            <Button variant="outline" onClick={() => setSelectedDate(getTodayIsoDate())}>Today</Button>
+            <DatePicker value={selectedDate} onChange={changeDate} />
+            <Button className='bg-blue-400 px-6 py-4 cursor-pointer rounded-2xl text-white' onClick={() => changeDate(getTodayIsoDate())}>Hoje</Button>
           </div>
         </div>
       </div>
@@ -157,18 +190,25 @@ function App() {
         </div>
       </div>
 
-      <div className="border rounded overflow-hidden">
+      <div className={`border rounded overflow-hidden ${slideClass}`} key={selectedDate}>
         <div className="grid" style={{ gridTemplateColumns: `120px 1fr` }}>
           <div className="bg-gray-50 border-r p-3 font-medium">Time</div>
           <div className="overflow-x-auto">
             <div className="min-w-max">
               <div className="grid border-b" style={{ gridTemplateColumns: `repeat(${visibleRooms.length}, minmax(180px, 1fr))` }}>
-                {visibleRooms.map(room => (
-                  <div key={room.id} className="p-3 border-r last:border-r-0 bg-gray-50">
-                    <div className="font-medium">{room.name}</div>
-                    <div className="text-xs text-gray-500">{centerIdToName.get(room.centerId) ?? ''}</div>
-                  </div>
-                ))}
+                {visibleRooms.map(room => {
+                  const style = centerIdToStyle.get(room.centerId)
+                  const Icon = style?.Icon
+                  return (
+                    <div key={room.id} className={`p-3 border-r last:border-r-0 ${style?.bg ?? 'bg-gray-50'}`}>
+                      <div className="flex items-center gap-2">
+                        {Icon ? <Icon className={`h-4 w-4 ${style?.text ?? 'text-gray-600'}`} /> : <span className={`inline-block h-2.5 w-2.5 rounded-full ${style?.badge ?? 'bg-gray-400'}`} />}
+                        <div className="font-medium">{room.name}</div>
+                      </div>
+                      <div className={`text-xs ${style?.text ?? 'text-gray-500'}`}>{centerIdToName.get(room.centerId) ?? ''}</div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           </div>
@@ -206,10 +246,11 @@ function App() {
                           const endM = Math.max(startM + 15, parseTimeToMinutes(b.end))
                           const top = startM * pxPerMinute
                           const height = Math.max(20, (endM - startM) * pxPerMinute)
+                          const style = centerIdToStyle.get(room.centerId)
                           return (
                             <div
                               key={b.id}
-                              className="absolute left-2 right-2 rounded bg-blue-500/90 text-white shadow"
+                              className={`absolute left-2 right-2 rounded text-white shadow ${style?.badge ?? 'bg-blue-500'}`}
                               style={{ top, height }}
                               title={`${b.title} (${b.start} - ${b.end})`}
                             >

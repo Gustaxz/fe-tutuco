@@ -35,9 +35,14 @@ export function DatePicker({ value, onChange }: { value: string, onChange: (next
 
   return (
     <div className="flex items-center gap-2">
-      <Button variant="outline" size="icon" onClick={goPrevDay} aria-label="Previous day">
-        <ChevronLeft className="h-4 w-4" />
-      </Button>
+      <div className='flex items-center gap-4'>
+        <Button className='bg-transparent text-black p-2 rounded-full hover:bg-gray-200 cursor-pointer' onClick={goPrevDay} aria-label="Previous day">
+          <ChevronLeft className="h-6 w-6" />
+        </Button>
+        <Button className='bg-transparent text-black p-2 rounded-full hover:bg-gray-200 cursor-pointer' onClick={goNextDay} aria-label="Next day">
+          <ChevronRight className="h-6 w-6" />
+        </Button>
+      </div>
       <Popover>
         <PopoverTrigger asChild>
           <Button
@@ -55,9 +60,7 @@ export function DatePicker({ value, onChange }: { value: string, onChange: (next
           />
         </PopoverContent>
       </Popover>
-      <Button variant="outline" size="icon" onClick={goNextDay} aria-label="Next day">
-        <ChevronRight className="h-4 w-4" />
-      </Button>
+
     </div>
   )
 }

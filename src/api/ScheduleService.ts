@@ -19,8 +19,11 @@ export type Booking = {
 }
 
 const centers: SurgeryCenter[] = [
-  { id: 'c1', name: 'Center A' },
-  { id: 'c2', name: 'Center B' },
+  { id: 'c1', name: 'Centro cardíaco' },
+  { id: 'c2', name: 'Centro neurocirúrgico' },
+  { id: 'c3', name: 'Centro ortopédico' },
+  { id: 'c4', name: 'Centro urológico' },
+  { id: 'c5', name: 'Centro ginecológico' },
 ]
 
 const rooms: Room[] = [
