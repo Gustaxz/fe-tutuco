@@ -6,6 +6,7 @@ import { MultiSelect, type MultiSelectOption } from '../ui/multi-select'
 import { Home } from 'lucide-react'
 import { FaHeart, FaBrain, FaBone, FaVenus } from 'react-icons/fa'
 import { GiKidneys } from 'react-icons/gi'
+import { ConfirmationModal } from '../ScheduleModal/ConfirmationModal'
 
 function formatHourLabel(hour: number): string {
   return `${hour.toString().padStart(2, '0')}:00`
@@ -60,6 +61,21 @@ export function CalendarScreen() {
   const pxPerMinute = rowHeightPx / 60
 
   const [slideClass, setSlideClass] = useState<string>('')
+
+  // Drag and drop state
+  const [draggedBooking, setDraggedBooking] = useState<Booking | null>(null)
+  
+  // Confirmation modal state
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
+  const [pendingUpdate, setPendingUpdate] = useState<{
+    bookingId: string
+    roomId: string
+    start: string
+    end: string
+    oldRoomId: string
+    oldStart: string
+    oldEnd: string
+  } | null>(null)
 
   useEffect(() => {
     let mounted = true
@@ -149,6 +165,89 @@ export function CalendarScreen() {
     const curr = isoToDate(selectedDate)
     setSlideClass(next.getTime() > curr.getTime() ? 'slide-in-left' : 'slide-in-right')
     setSelectedDate(nextIso)
+  }
+
+  // Drag and drop handlers
+  function handleDragStart(booking: Booking) {
+    setDraggedBooking(booking)
+  }
+
+  function handleDragEnd() {
+    setDraggedBooking(null)
+  }
+
+  function handleDragOver(e: React.DragEvent) {
+    e.preventDefault()
+  }
+
+  async function handleDrop(e: React.DragEvent, roomId: string) {
+    e.preventDefault()
+    
+    if (!draggedBooking) return
+
+    // Calculate the new time based on drop position
+    const rect = e.currentTarget.getBoundingClientRect()
+    const offsetY = e.clientY - rect.top
+    const newStartMinutes = Math.floor(offsetY / pxPerMinute)
+    const newStartHour = Math.floor(newStartMinutes / 60)
+    const newStartMin = newStartMinutes % 60
+    
+    // Calculate duration of the booking
+    const oldStartMinutes = parseTimeToMinutes(draggedBooking.start)
+    const oldEndMinutes = parseTimeToMinutes(draggedBooking.end)
+    const duration = oldEndMinutes - oldStartMinutes
+    
+    // Calculate new end time
+    const newEndMinutes = newStartMinutes + duration
+    const newEndHour = Math.floor(newEndMinutes / 60)
+    const newEndMin = newEndMinutes % 60
+    
+    // Format times
+    const newStart = `${String(newStartHour).padStart(2, '0')}:${String(newStartMin).padStart(2, '0')}`
+    const newEnd = `${String(newEndHour).padStart(2, '0')}:${String(newEndMin).padStart(2, '0')}`
+    
+    // Store pending update and show confirmation modal
+    setPendingUpdate({
+      bookingId: draggedBooking.id,
+      roomId,
+      start: newStart,
+      end: newEnd,
+      oldRoomId: draggedBooking.roomId,
+      oldStart: draggedBooking.start,
+      oldEnd: draggedBooking.end,
+    })
+    setShowConfirmModal(true)
+    setDraggedBooking(null)
+  }
+
+  async function confirmBookingUpdate() {
+    if (!pendingUpdate) return
+    
+    try {
+      // Update booking in the service
+      await ScheduleService.updateBooking(pendingUpdate.bookingId, {
+        roomId: pendingUpdate.roomId,
+        start: pendingUpdate.start,
+        end: pendingUpdate.end,
+      })
+      
+      // Update local state
+      setBookings(prev => prev.map(b => 
+        b.id === pendingUpdate.bookingId 
+          ? { ...b, roomId: pendingUpdate.roomId, start: pendingUpdate.start, end: pendingUpdate.end }
+          : b
+      ))
+    } catch (error) {
+      console.error('Failed to update booking:', error)
+    }
+    
+    setShowConfirmModal(false)
+    setPendingUpdate(null)
+  }
+
+  function cancelBookingUpdate() {
+    setShowConfirmModal(false)
+    setPendingUpdate(null)
   }
 
   const centerOptions: MultiSelectOption[] = useMemo(() => centers.map(c => ({ value: c.id, label: c.name })), [centers])
@@ -252,7 +351,12 @@ export function CalendarScreen() {
                     {visibleRooms.map(room => {
                       const roomBookings = bookings.filter(b => b.roomId === room.id)
                       return (
-                        <div key={room.id} className="relative border-r border-gray-300 last:border-r-0">
+                        <div 
+                          key={room.id} 
+                          className="relative border-r border-gray-300 last:border-r-0"
+                          onDragOver={handleDragOver}
+                          onDrop={(e) => handleDrop(e, room.id)}
+                        >
                           {roomBookings.map(b => {
                             const startM = parseTimeToMinutes(b.start)
                             const endM = Math.max(startM + 15, parseTimeToMinutes(b.end))
@@ -262,7 +366,10 @@ export function CalendarScreen() {
                             return (
                               <div
                                 key={b.id}
-                                className={`absolute left-2 right-2 rounded text-white shadow ${style?.badge ?? 'bg-blue-500'}`}
+                                draggable
+                                onDragStart={() => handleDragStart(b)}
+                                onDragEnd={handleDragEnd}
+                                className={`absolute left-2 right-2 rounded text-white shadow cursor-move hover:shadow-lg transition-shadow ${style?.badge ?? 'bg-blue-500'}`}
                                 style={{ top, height }}
                                 title={`${b.title} (${b.start} - ${b.end})`}
                               >
@@ -281,6 +388,18 @@ export function CalendarScreen() {
           </div>
         </div>
       </div>
+
+      <ConfirmationModal
+        isOpen={showConfirmModal}
+        onConfirm={confirmBookingUpdate}
+        onCancel={cancelBookingUpdate}
+        title="Confirmar alteração de agendamento"
+        message={
+          pendingUpdate
+            ? `Deseja confirmar a alteração do agendamento para ${pendingUpdate.start} - ${pendingUpdate.end}?`
+            : ''
+        }
+      />
     </>
   )
 }
