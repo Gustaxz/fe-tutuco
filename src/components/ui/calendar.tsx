@@ -1,6 +1,6 @@
-import * as React from 'react'
+// no need to import React explicitly in React 17+
 import { DayPicker, type DayPickerSingleProps } from 'react-day-picker'
-import 'react-day-picker/dist/style.css'
+import 'react-day-picker/style.css'
 
 export type CalendarProps = Omit<DayPickerSingleProps, 'mode'>
 

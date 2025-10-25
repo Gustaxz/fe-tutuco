@@ -1,7 +1,7 @@
 import { Button } from './button'
 import { Popover, PopoverContent, PopoverTrigger } from './popover'
 import { Calendar } from './calendar'
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
 
 function isoToDate(iso: string): Date {
   const [y, m, d] = iso.split('-').map(Number)
@@ -35,7 +35,7 @@ export function DatePicker({ value, onChange }: { value: string, onChange: (next
 
   return (
     <div className="flex items-center gap-2">
-      <div className='flex items-center gap-4'>
+      <div className='flex items-center gap-0'>
         <Button className='bg-transparent text-black p-2 rounded-full hover:bg-gray-200 cursor-pointer' onClick={goPrevDay} aria-label="Previous day">
           <ChevronLeft className="h-6 w-6" />
         </Button>
@@ -46,11 +46,10 @@ export function DatePicker({ value, onChange }: { value: string, onChange: (next
       <Popover>
         <PopoverTrigger asChild>
           <Button
-            variant="outline"
-            className="justify-start text-left font-normal min-w-56"
+            className="text-left gap-4 font-normal text-2xl min-w-56 bg-transparent text-black hover:bg-gray-100 border-0"
           >
-            <CalendarIcon className="mr-2 h-4 w-4" />
             {formatDisplayDate(value)}
+            <ChevronDown className="h-4 w-4 opacity-60" strokeWidth={3}/>
           </Button>
         </PopoverTrigger>
         <PopoverContent align="start" className="p-0">
