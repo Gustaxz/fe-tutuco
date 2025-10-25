@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState, type ComponentType } from 'react'
-import { ScheduleService, type Booking, type Room, type SurgeryCenter } from './api/ScheduleService'
+import { ScheduleService, type Booking, type Room, type SurgeryCenter } from './api/ScheduleMock'
 import { DatePicker } from './components/ui/date-picker'
 import { Button } from './components/ui/button'
+import { MultiSelect, type MultiSelectOption } from './components/ui/multi-select'
 import { Building2, Landmark, Home } from 'lucide-react'
 
 function formatHourLabel(hour: number): string {
@@ -30,7 +31,7 @@ function App() {
   const [centers, setCenters] = useState<SurgeryCenter[]>([])
   const [allRooms, setAllRooms] = useState<Room[]>([])
 
-  const [selectedCenterId, setSelectedCenterId] = useState<string>('')
+  const [selectedCenterIds, setSelectedCenterIds] = useState<string[]>([])
   const [selectedRoomIds, setSelectedRoomIds] = useState<string[]>([])
   const [selectedDate, setSelectedDate] = useState<string>(getTodayIsoDate())
 
@@ -58,20 +59,21 @@ function App() {
     }
   }, [])
 
-  const roomsForSelectedCenter = useMemo(() => {
-    if (!selectedCenterId) return allRooms
-    return allRooms.filter(r => r.centerId === selectedCenterId)
-  }, [allRooms, selectedCenterId])
+  const roomsForSelectedCenters = useMemo(() => {
+    if (!selectedCenterIds || selectedCenterIds.length === 0) return allRooms
+    const set = new Set(selectedCenterIds)
+    return allRooms.filter(r => set.has(r.centerId))
+  }, [allRooms, selectedCenterIds])
 
   const visibleRoomIds = useMemo(() => {
     if (selectedRoomIds.length > 0) return selectedRoomIds
-    return roomsForSelectedCenter.map(r => r.id)
-  }, [selectedRoomIds, roomsForSelectedCenter])
+    return roomsForSelectedCenters.map(r => r.id)
+  }, [selectedRoomIds, roomsForSelectedCenters])
 
   const visibleRooms = useMemo(() => {
     const set = new Set(visibleRoomIds)
-    return roomsForSelectedCenter.filter(r => set.has(r.id))
-  }, [visibleRoomIds, roomsForSelectedCenter])
+    return roomsForSelectedCenters.filter(r => set.has(r.id))
+  }, [visibleRoomIds, roomsForSelectedCenters])
 
   const centerIdToName = useMemo(() => {
     const m = new Map<string, string>()
@@ -103,7 +105,7 @@ function App() {
     ;(async () => {
       const data = await ScheduleService.getBookingsByDate(
         selectedDate,
-        selectedCenterId || undefined,
+        undefined,
         visibleRoomIds,
       )
       if (!mounted) return
@@ -112,27 +114,20 @@ function App() {
     return () => {
       mounted = false
     }
-  }, [selectedDate, selectedCenterId, visibleRoomIds])
+  }, [selectedDate, visibleRoomIds])
 
-  function toggleRoom(roomId: string) {
-    setSelectedRoomIds(curr =>
-      curr.includes(roomId) ? curr.filter(id => id !== roomId) : [...curr, roomId],
-    )
-  }
+  // Keep selected rooms aligned with available rooms for selected centers
+  useEffect(() => {
+    const newRoomIds = roomsForSelectedCenters.map(r => r.id)
+    const allowed = new Set(newRoomIds)
+    setSelectedRoomIds(curr => {
+      const filtered = curr.filter(id => allowed.has(id))
+      if (filtered.length > 0) return filtered
+      return newRoomIds
+    })
+  }, [roomsForSelectedCenters])
 
-  function handleCenterChange(centerId: string) {
-    setSelectedCenterId(centerId)
-    const nextRooms = centerId ? allRooms.filter(r => r.centerId === centerId) : allRooms
-    setSelectedRoomIds(nextRooms.map(r => r.id))
-  }
-
-  function selectAllRooms() {
-    setSelectedRoomIds(roomsForSelectedCenter.map(r => r.id))
-  }
-
-  function clearRooms() {
-    setSelectedRoomIds([])
-  }
+  // centers/rooms are managed via MultiSelect components
 
   function changeDate(nextIso: string) {
     const next = isoToDate(nextIso)
@@ -140,6 +135,9 @@ function App() {
     setSlideClass(next.getTime() > curr.getTime() ? 'slide-in-left' : 'slide-in-right')
     setSelectedDate(nextIso)
   }
+
+  const centerOptions: MultiSelectOption[] = useMemo(() => centers.map(c => ({ value: c.id, label: c.name })), [centers])
+  const roomOptions: MultiSelectOption[] = useMemo(() => roomsForSelectedCenters.map(r => ({ value: r.id, label: r.name })), [roomsForSelectedCenters])
 
   return (
     <div className="p-4 space-y-4">
@@ -153,39 +151,27 @@ function App() {
       </div>
 
       <div className="flex flex-wrap items-end gap-4">
-        <div className="flex flex-col">
-          <label className="text-sm text-gray-600">Surgery Center</label>
-          <select
-            value={selectedCenterId}
-            onChange={e => handleCenterChange(e.target.value)}
-            className="border rounded px-3 py-2 min-w-48"
-          >
-            <option value="">All Centers</option>
-            {centers.map(c => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
+        <div className="min-w-80 w-md">
+          <span className="text-sm text-gray-600">Surgery Centers</span>
+          <div className="mt-2">
+            <MultiSelect
+              placeholder="Select centers..."
+              options={centerOptions}
+              values={selectedCenterIds}
+              onChange={setSelectedCenterIds}
+            />
+          </div>
         </div>
 
-        <div className="w-64">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600">Rooms</span>
-            <div className="flex gap-2">
-              <button onClick={selectAllRooms} className="text-xs text-blue-600 underline">Select all</button>
-              <button onClick={clearRooms} className="text-xs text-gray-600 underline">Clear</button>
-            </div>
-          </div>
-          <div className="mt-2 max-h-24 overflow-auto border rounded p-2 grid grid-cols-1 gap-2">
-            {roomsForSelectedCenter.map(r => (
-              <label key={r.id} className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={visibleRoomIds.includes(r.id)}
-                  onChange={() => toggleRoom(r.id)}
-                />
-                <span>{r.name}</span>
-              </label>
-            ))}
+        <div className="min-w-80 w-md">
+          <span className="text-sm text-gray-600">Rooms</span>
+          <div className="mt-2">
+            <MultiSelect
+              placeholder="Select rooms..."
+              options={roomOptions}
+              values={visibleRoomIds}
+              onChange={setSelectedRoomIds}
+            />
           </div>
         </div>
       </div>
