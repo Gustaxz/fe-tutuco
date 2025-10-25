@@ -84,8 +84,8 @@ function App() {
   const centerIdToStyle = useMemo(() => {
     // deterministic style mapping per center id
     const palette = [
-      { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', badge: 'bg-blue-600' },
-      { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', badge: 'bg-emerald-600' },
+      { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200', badge: 'bg-red-500' },
+      { bg: 'bg-pink-200', text: 'text-pink-700', border: 'border-pink-200', badge: 'bg-pink-600' },
       { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', badge: 'bg-amber-600' },
       { bg: 'bg-violet-50', text: 'text-violet-700', border: 'border-violet-200', badge: 'bg-violet-600' },
       { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200', badge: 'bg-rose-600' },
@@ -176,17 +176,17 @@ function App() {
         </div>
       </div>
 
-      <div className={`border rounded overflow-hidden ${slideClass}`} key={selectedDate}>
+      <div className={`rounded-2xl overflow-hidden ${slideClass}`} key={selectedDate}>
         <div className="grid" style={{ gridTemplateColumns: `120px 1fr` }}>
-          <div className="bg-gray-50 border-r p-3 font-medium">Time</div>
+          <div className="bg-gray-50 p-3 font-medium">Time</div>
           <div className="overflow-x-auto">
             <div className="min-w-max">
-              <div className="grid border-b" style={{ gridTemplateColumns: `repeat(${visibleRooms.length}, minmax(180px, 1fr))` }}>
+              <div className="grid border-b border-gray-300" style={{ gridTemplateColumns: `repeat(${visibleRooms.length}, minmax(180px, 1fr))` }}>
                 {visibleRooms.map(room => {
                   const style = centerIdToStyle.get(room.centerId)
                   const Icon = style?.Icon
                   return (
-                    <div key={room.id} className={`p-3 border-r last:border-r-0 ${style?.bg ?? 'bg-gray-50'}`}>
+                    <div key={room.id} className={`p-3 border-r border-gray-300 last:border-r-0 ${style?.bg ?? 'bg-gray-50'}`}>
                       <div className="flex items-center gap-2">
                         {Icon ? <Icon className={`h-4 w-4 ${style?.text ?? 'text-gray-600'}`} /> : <span className={`inline-block h-2.5 w-2.5 rounded-full ${style?.badge ?? 'bg-gray-400'}`} />}
                         <div className="font-medium">{room.name}</div>
@@ -201,10 +201,10 @@ function App() {
         </div>
 
         <div className="grid" style={{ gridTemplateColumns: `120px 1fr` }}>
-          <div className="border-r">
+          <div className="">
             <div className="relative" style={{ height: `${rowHeightPx * 24}px` }}>
               {hours.map(h => (
-                <div key={h} className="flex items-start border-b last:border-b-0" style={{ height: `${rowHeightPx}px` }}>
+                <div key={h} className="flex items-start border-b border-gray-300 last:border-b-0" style={{ height: `${rowHeightPx}px` }}>
                   <div className="px-3 pt-1 text-sm text-gray-700">{formatHourLabel(h)}</div>
                 </div>
               ))}
@@ -217,16 +217,24 @@ function App() {
                   className="absolute inset-0 grid"
                   style={{ gridTemplateRows: `repeat(24, ${rowHeightPx}px)`, gridTemplateColumns: `repeat(${visibleRooms.length}, minmax(180px, 1fr))` }}
                 >
-                  {Array.from({ length: 24 * visibleRooms.length }, (_, idx) => (
-                    <div key={idx} className="border-b border-r last:border-r-0" />
-                  ))}
+                  {Array.from({ length: 24 * visibleRooms.length }, (_, idx) => {
+                    const cols = visibleRooms.length
+                    const isLastCol = cols > 0 ? (idx % cols) === cols - 1 : false
+                    const isLastRow = Math.floor(idx / (cols || 1)) === 23
+                    return (
+                      <div
+                        key={idx}
+                        className={`border-gray-300 ${isLastCol ? '' : 'border-r'} ${isLastRow ? '' : 'border-b'}`}
+                      />
+                    )
+                  })}
                 </div>
 
                 <div className="absolute inset-0" style={{ display: 'grid', gridTemplateColumns: `repeat(${visibleRooms.length}, minmax(180px, 1fr))` }}>
                   {visibleRooms.map(room => {
                     const roomBookings = bookings.filter(b => b.roomId === room.id)
                     return (
-                      <div key={room.id} className="relative border-r last:border-r-0">
+                      <div key={room.id} className="relative border-r border-gray-300 last:border-r-0">
                         {roomBookings.map(b => {
                           const startM = parseTimeToMinutes(b.start)
                           const endM = Math.max(startM + 15, parseTimeToMinutes(b.end))

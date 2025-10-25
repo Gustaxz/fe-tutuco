@@ -104,7 +104,7 @@ export function MultiSelect({
               className="flex w-full items-center gap-2 rounded px-2 py-1 text-sm hover:bg-gray-100"
               onClick={selectAllVisible}
             >
-              <span className={`h-4 w-4 rounded border flex items-center justify-center ${filtered.every(o => selected.has(o.value)) && filtered.length > 0 ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-300'}`}>
+              <span className={`h-4 w-4 rounded border flex items-center justify-center ${filtered.every(o => selected.has(o.value)) && filtered.length > 0 ? 'bg-blue-400 border-blue-400 text-white' : 'border-gray-300'}`}>
                 {filtered.every(o => selected.has(o.value)) && filtered.length > 0 && <Check className="h-3 w-3" />}
               </span>
               <span className="truncate">{selectAllLabel}</span>
@@ -116,7 +116,7 @@ export function MultiSelect({
               className="flex w-full items-center gap-2 rounded px-2 py-1 text-sm hover:bg-gray-100"
               onClick={() => toggle(opt.value)}
             >
-              <span className={`h-4 w-4 rounded border flex items-center justify-center ${selected.has(opt.value) ? 'bg-blue-600 border-blue-600 text-white' : 'border-gray-300'}`}>
+              <span className={`h-4 w-4 rounded border flex items-center justify-center ${selected.has(opt.value) ? 'bg-blue-400 border-blue-400 text-white' : 'border-gray-300'}`}>
                 {selected.has(opt.value) && <Check className="h-3 w-3" />}
               </span>
               <span className="truncate">{opt.label}</span>
