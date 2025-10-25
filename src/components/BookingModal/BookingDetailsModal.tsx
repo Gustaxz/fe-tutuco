@@ -1,5 +1,6 @@
 import { Button } from '../ui/button'
-import type { Booking, Room } from '../../api/ScheduleMock'
+import type { Booking } from '../../api/ScheduleMock'
+import type { Room } from '../../api/ScheduleApi'
 
 interface BookingDetailsModalProps {
   isOpen: boolean

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ComponentType } from 'react'
-import { ScheduleService, type Booking, type Room, type SurgeryCenter } from '../../api/ScheduleMock'
+import { type Booking } from '../../api/ScheduleMock'
+import { ScheduleApiService, type Room, type SurgeryCenter } from '../../api/ScheduleApi'
 import { DatePicker } from '../ui/date-picker'
 import { Button } from '../ui/button'
 import { MultiSelect, type MultiSelectOption } from '../ui/multi-select'
@@ -31,6 +32,7 @@ type CenterStyle = { bg: string, text: string, border: string, badge: string, Ic
 const centerStylePresets: Record<string, CenterStyle> = {
     // c1: Centro cardíaco → heart
     c1: { bg: 'bg-gray-100', text: 'text-black', border: 'border-gray-300', badge: 'bg-rose-500', Icon: FaHeart, color: '#ef4444' },
+    'fcefdfa8-47db-470d-8b9c-e68c241a9d63': { bg: 'bg-gray-100', text: 'text-black', border: 'border-gray-300', badge: 'bg-rose-500', Icon: FaHeart, color: '#ef4444' },
     // c2: Centro neurocirúrgico → brain
     c2: { bg: 'bg-gray-100', text: 'text-black', border: 'border-gray-300', badge: 'bg-violet-500', Icon: FaBrain, color: '#8b5cf6' },
     // c3: Centro ortopédico → bone
@@ -74,13 +76,18 @@ export function CalendarScreen({ setShowCalendar, showCalendar }: CalendarScreen
     useEffect(() => {
         let mounted = true
             ; (async () => {
-                const [fetchedCenters, fetchedRooms] = await Promise.all([
-                    ScheduleService.getSurgeryCenters(),
-                    ScheduleService.getRooms(),
-                ])
-                if (!mounted) return
-                setCenters(fetchedCenters)
-                setAllRooms(fetchedRooms)
+                try {
+                    const [fetchedCenters, fetchedRooms] = await Promise.all([
+                        ScheduleApiService.getSurgeryCenters(),
+                        ScheduleApiService.getRooms(),
+                    ])
+                    if (!mounted) return
+                    setCenters(fetchedCenters)
+                    setAllRooms(fetchedRooms)
+                } catch (error) {
+                    console.error('Error loading data:', error)
+                    // Could show an error message to the user here
+                }
             })()
         return () => {
             mounted = false
@@ -128,13 +135,19 @@ export function CalendarScreen({ setShowCalendar, showCalendar }: CalendarScreen
     useEffect(() => {
         let mounted = true
             ; (async () => {
-                const data = await ScheduleService.getBookingsByDate(
-                    selectedDate,
-                    undefined,
-                    visibleRoomIds,
-                )
-                if (!mounted) return
-                setBookings(data)
+                try {
+                    const data = await ScheduleApiService.getBookingsByDate(
+                        selectedDate,
+                        undefined,
+                        visibleRoomIds,
+                    )
+                    if (!mounted) return
+                    setBookings(data)
+                } catch (error) {
+                    console.error('Error loading bookings:', error)
+                    if (!mounted) return
+                    setBookings([])
+                }
             })()
         return () => {
             mounted = false
