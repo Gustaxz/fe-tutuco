@@ -1,7 +1,6 @@
-import { CalendarScreen } from './components/CalendarScreen/CalendarScreen'
+import Dashboard from './lib/Dashboard'
 
 export default function App() {
-
-  return <CalendarScreen />
+  return <Dashboard />
 }
 
