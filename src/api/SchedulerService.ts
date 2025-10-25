@@ -1,68 +1,121 @@
-export type SurgeryCenter = {
-  id: string
-  name: string
+const baseUrl = "/api";
+
+async function fetchJSON<T>(url: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(url, {
+    headers: { "Content-Type": "application/json" },
+    ...init,
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
 }
 
-export type Room = {
-  id: string
-  name: string
-  centerId: string
+// --- Availability (Etapa 1)
+export async function getSlots(params: {
+  start: string; // ISO janela início
+  end: string; // ISO janela fim
+  duracaoMin: number;
+  salaId?: number;
+  profissionalId?: number;
+  centroId: number;
+}) {
+  const q = new URLSearchParams({
+    start: params.start,
+    end: params.end,
+    duracaoMin: String(params.duracaoMin),
+    salaId: params.salaId ? String(params.salaId) : "",
+    profissionalId: params.profissionalId ? String(params.profissionalId) : "",
+    centroId: String(params.centroId),
+  }).toString();
+  return fetchJSON<{ slots: import("../components/Scheduler/types").Slot[] }>(
+    `${baseUrl}/availability/slots?${q}`
+  );
 }
 
-export type Booking = {
-  id: string
-  title: string
-  roomId: string
-  date: string // YYYY-MM-DD
-  start: string // HH:MM (24h)
-  end: string // HH:MM (24h)
+export async function getSalas(centroId: number) {
+  return fetchJSON<import("../components/Scheduler/types").Sala[]>(
+    `${baseUrl}/availability/salas?centroId=${centroId}`
+  );
 }
 
-const centers: SurgeryCenter[] = [
-  { id: 'c1', name: 'Centro cardíaco' },
-  { id: 'c2', name: 'Centro neurocirúrgico' },
-  { id: 'c3', name: 'Centro ortopédico' },
-  { id: 'c4', name: 'Centro urológico' },
-  { id: 'c5', name: 'Centro ginecológico' },
-]
+export async function getMedicos(params: {
+  especialidadeIds?: number[];
+  nome?: string;
+}) {
+  const q = new URLSearchParams({ nome: params.nome ?? "" }).toString();
+  return fetchJSON<import("../components/Scheduler/types").Medico[]>(
+    `${baseUrl}/availability/profissionais?${q}`
+  );
+}
 
-const rooms: Room[] = [
-  { id: 'r1', name: 'Room 1', centerId: 'c1' },
-  { id: 'r2', name: 'Room 2', centerId: 'c1' },
-  { id: 'r3', name: 'Room 3', centerId: 'c1' },
-  { id: 'r4', name: 'Room 1', centerId: 'c2' },
-  { id: 'r5', name: 'Room 2', centerId: 'c2' },
-]
+// --- Funcionários (Etapa 2)
+export async function searchFuncionarios(params: {
+  inicio: string; // ISO
+  fim: string; // ISO
+  interno: boolean; // obrigatório
+  especialidadeId?: number;
+  nome?: string;
+}) {
+  const q = new URLSearchParams({
+    inicio: params.inicio,
+    fim: params.fim,
+    interno: String(params.interno),
+    especialidadeId: params.especialidadeId
+      ? String(params.especialidadeId)
+      : "",
+    nome: params.nome ?? "",
+  }).toString();
+  return fetchJSON<import("../components/Scheduler/types").Funcionario[]>(
+    `${baseUrl}/availability/profissionais?${q}`
+  );
+}
 
-// Sample data for demonstration
-const sampleDate = '2025-10-25'
+// --- Recursos reutilizáveis (Etapa 3)
+export async function searchRecursos(params: {
+  inicio: string;
+  fim: string;
+  grupoId?: number;
+  externo?: boolean;
+}) {
+  const q = new URLSearchParams({
+    inicio: params.inicio,
+    fim: params.fim,
+    grupoId: params.grupoId ? String(params.grupoId) : "",
+    externo: params.externo != null ? String(params.externo) : "",
+  }).toString();
+  return fetchJSON<import("../components/Scheduler/types").Recurso[]>(
+    `${baseUrl}/availability/recursos?${q}`
+  );
+}
 
-const bookings: Booking[] = [
-  { id: 'b1', title: 'Knee Arthroscopy', roomId: 'r1', date: sampleDate, start: '09:30', end: '11:00' },
-  { id: 'b2', title: 'Hip Replacement', roomId: 'r2', date: sampleDate, start: '13:00', end: '15:30' },
-  { id: 'b3', title: 'Appendectomy', roomId: 'r4', date: sampleDate, start: '08:00', end: '09:15' },
-]
+// --- Itens descartáveis (Etapa 3)
+export async function getItemSaldo(itemTipoId: number) {
+  return fetchJSON<{ disponivel: number }>(
+    `${baseUrl}/estoque/itens/${itemTipoId}/disponivel`
+  );
+}
 
-export const ScheduleService = {
-  async getSurgeryCenters(): Promise<SurgeryCenter[]> {
-    return centers
-  },
+// --- Validação & Agendamento (Etapas 2/3)
+export async function validar(
+  body: import("../components/Scheduler/types").AgendarPayload
+) {
+  return fetchJSON<{
+    ok: boolean;
+    conflitos?: unknown;
+    sugestoes?: { inicio: string; fim: string }[];
+  }>(`${baseUrl}/procedimentos/validar`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
 
-  async getRooms(centerId?: string): Promise<Room[]> {
-    if (!centerId) return rooms
-    return rooms.filter(r => r.centerId === centerId)
-  },
-
-  async getBookingsByDate(date: string, centerId?: string, roomIds?: string[]): Promise<Booking[]> {
-    let filtered = bookings.filter(b => b.date === date)
-    if (centerId) {
-      const roomIdsForCenter = new Set(rooms.filter(r => r.centerId === centerId).map(r => r.id))
-      filtered = filtered.filter(b => roomIdsForCenter.has(b.roomId))
+export async function agendar(
+  body: import("../components/Scheduler/types").AgendarPayload
+) {
+  return fetchJSON<{ procedimentoId: number }>(
+    `${baseUrl}/procedimentos/agendar`,
+    {
+      method: "POST",
+      body: JSON.stringify(body),
     }
-    if (roomIds && roomIds.length > 0) {
-      const set = new Set(roomIds)
-      filtered = filtered.filter(b => set.has(b.roomId))
-    }
-    return filtered
-  },
+  );
 }

@@ -4,6 +4,7 @@ import { DatePicker } from './components/ui/date-picker'
 import { Button } from './components/ui/button'
 import { MultiSelect, type MultiSelectOption } from './components/ui/multi-select'
 import { Building2, Landmark, Home } from 'lucide-react'
+import Scheduler from './components/Scheduler/Scheduler'
 
 function formatHourLabel(hour: number): string {
   return `${hour.toString().padStart(2, '0')}:00`
@@ -42,7 +43,7 @@ function App() {
   const pxPerMinute = rowHeightPx / 60
 
   const [slideClass, setSlideClass] = useState<string>('')
-
+ const [openScheduler, setOpenScheduler] = useState(false)
   useEffect(() => {
     let mounted = true
     ;(async () => {
@@ -146,9 +147,13 @@ function App() {
           <div className="flex items-center gap-2">
             <DatePicker value={selectedDate} onChange={changeDate} />
             <Button className='bg-blue-400 px-6 py-4 cursor-pointer rounded-2xl text-white' onClick={() => changeDate(getTodayIsoDate())}>Hoje</Button>
+             <Button variant="secondary" onClick={() => setOpenScheduler(true)}>
+                Nova cirurgia
+              </Button>
           </div>
         </div>
       </div>
+      
 
       <div className="flex flex-wrap items-end gap-4">
         <div className="min-w-80 w-md">
@@ -254,6 +259,7 @@ function App() {
           </div>
         </div>
       </div>
+       <Scheduler open={openScheduler} onClose={() => setOpenScheduler(false)} />
     </div>
   )
 }
