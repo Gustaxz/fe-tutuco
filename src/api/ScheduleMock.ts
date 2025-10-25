@@ -65,11 +65,4 @@ export const ScheduleService = {
     }
     return filtered
   },
-
-  async updateBooking(bookingId: string, updates: Partial<Booking>): Promise<Booking> {
-    const index = bookings.findIndex(b => b.id === bookingId)
-    if (index === -1) throw new Error(`Booking ${bookingId} not found`)
-    bookings[index] = { ...bookings[index], ...updates }
-    return bookings[index]
-  },
 }

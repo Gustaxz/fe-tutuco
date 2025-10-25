@@ -6,400 +6,295 @@ import { MultiSelect, type MultiSelectOption } from '../ui/multi-select'
 import { Home } from 'lucide-react'
 import { FaHeart, FaBrain, FaBone, FaVenus } from 'react-icons/fa'
 import { GiKidneys } from 'react-icons/gi'
-import { ConfirmationModal } from '../ScheduleModal/ConfirmationModal'
 
 function formatHourLabel(hour: number): string {
-  return `${hour.toString().padStart(2, '0')}:00`
+    return `${hour.toString().padStart(2, '0')}:00`
 }
 
 function getTodayIsoDate(): string {
-  const d = new Date()
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
+    const d = new Date()
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
 }
 
 function parseTimeToMinutes(time24h: string): number {
-  const [h, m] = time24h.split(':').map(Number)
-  return h * 60 + m
+    const [h, m] = time24h.split(':').map(Number)
+    return h * 60 + m
 }
 
 type CenterStyle = { bg: string, text: string, border: string, badge: string, Icon: ComponentType<{ className?: string; color?: string }>, color?: string }
 
 // Uses real centers from the mock service (ids: c1..c5) — extend as needed
 const centerStylePresets: Record<string, CenterStyle> = {
-  // c1: Centro cardíaco → heart
-  c1: { bg: 'bg-gray-100', text: 'text-black', border: 'border-gray-300', badge: 'bg-rose-500', Icon: FaHeart, color: '#ef4444' },
-  // c2: Centro neurocirúrgico → brain
-  c2: { bg: 'bg-gray-100', text: 'text-black', border: 'border-gray-300', badge: 'bg-violet-500', Icon: FaBrain, color: '#8b5cf6' },
-  // c3: Centro ortopédico → bone
-  c3: { bg: 'bg-gray-100', text: 'text-black', border: 'border-gray-300', badge: 'bg-amber-500', Icon: FaBone, color: '#f59e0b' },
-  // c4: Centro urológico → kidneys
-  c4: { bg: 'bg-gray-100', text: 'text-black', border: 'border-gray-300', badge: 'bg-emerald-500', Icon: GiKidneys, color: '#10b981' },
-  // c5: Centro ginecológico → uterus
-  c5: { bg: 'bg-gray-100', text: 'text-black', border: 'border-gray-300', badge: 'bg-pink-500', Icon: FaVenus, color: '#ec4899' },
+    // c1: Centro cardíaco → heart
+    c1: { bg: 'bg-gray-100', text: 'text-black', border: 'border-gray-300', badge: 'bg-rose-500', Icon: FaHeart, color: '#ef4444' },
+    // c2: Centro neurocirúrgico → brain
+    c2: { bg: 'bg-gray-100', text: 'text-black', border: 'border-gray-300', badge: 'bg-violet-500', Icon: FaBrain, color: '#8b5cf6' },
+    // c3: Centro ortopédico → bone
+    c3: { bg: 'bg-gray-100', text: 'text-black', border: 'border-gray-300', badge: 'bg-amber-500', Icon: FaBone, color: '#f59e0b' },
+    // c4: Centro urológico → kidneys
+    c4: { bg: 'bg-gray-100', text: 'text-black', border: 'border-gray-300', badge: 'bg-emerald-500', Icon: GiKidneys, color: '#10b981' },
+    // c5: Centro ginecológico → uterus
+    c5: { bg: 'bg-gray-100', text: 'text-black', border: 'border-gray-300', badge: 'bg-pink-500', Icon: FaVenus, color: '#ec4899' },
 }
 
 function isoToDate(iso: string): Date {
-  const [y, m, d] = iso.split('-').map(Number)
-  return new Date(y, (m || 1) - 1, d || 1)
+    const [y, m, d] = iso.split('-').map(Number)
+    return new Date(y, (m || 1) - 1, d || 1)
 }
 
-export function CalendarScreen() {
-  const [centers, setCenters] = useState<SurgeryCenter[]>([])
-  const [allRooms, setAllRooms] = useState<Room[]>([])
+interface CalendarScreenProps {
+    setShowCalendar: (value: React.SetStateAction<boolean>) => void
+    showCalendar: boolean
+}
 
-  const [selectedCenterIds, setSelectedCenterIds] = useState<string[]>([])
-  const [selectedRoomIds, setSelectedRoomIds] = useState<string[]>([])
-  const [selectedDate, setSelectedDate] = useState<string>(getTodayIsoDate())
+export function CalendarScreen({ setShowCalendar, showCalendar }: CalendarScreenProps) {
+    const [centers, setCenters] = useState<SurgeryCenter[]>([])
+    const [allRooms, setAllRooms] = useState<Room[]>([])
 
-  const [bookings, setBookings] = useState<Booking[]>([])
+    const [selectedCenterIds, setSelectedCenterIds] = useState<string[]>([])
+    const [selectedRoomIds, setSelectedRoomIds] = useState<string[]>([])
+    const [selectedDate, setSelectedDate] = useState<string>(getTodayIsoDate())
 
-  const hours = useMemo(() => Array.from({ length: 24 }, (_, i) => i), [])
-  const rowHeightPx = 56
-  const pxPerMinute = rowHeightPx / 60
+    const [bookings, setBookings] = useState<Booking[]>([])
 
-  const [slideClass, setSlideClass] = useState<string>('')
+    const hours = useMemo(() => Array.from({ length: 24 }, (_, i) => i), [])
+    const rowHeightPx = 56
+    const pxPerMinute = rowHeightPx / 60
 
-  // Drag and drop state
-  const [draggedBooking, setDraggedBooking] = useState<Booking | null>(null)
-  
-  // Confirmation modal state
-  const [showConfirmModal, setShowConfirmModal] = useState(false)
-  const [pendingUpdate, setPendingUpdate] = useState<{
-    bookingId: string
-    roomId: string
-    start: string
-    end: string
-    oldRoomId: string
-    oldStart: string
-    oldEnd: string
-  } | null>(null)
+    const [slideClass, setSlideClass] = useState<string>('')
 
-  useEffect(() => {
-    let mounted = true
-      ; (async () => {
-        const [fetchedCenters, fetchedRooms] = await Promise.all([
-          ScheduleService.getSurgeryCenters(),
-          ScheduleService.getRooms(),
-        ])
-        if (!mounted) return
-        setCenters(fetchedCenters)
-        setAllRooms(fetchedRooms)
-      })()
-    return () => {
-      mounted = false
-    }
-  }, [])
-
-  const roomsForSelectedCenters = useMemo(() => {
-    if (!selectedCenterIds || selectedCenterIds.length === 0) return allRooms
-    const set = new Set(selectedCenterIds)
-    return allRooms.filter(r => set.has(r.centerId))
-  }, [allRooms, selectedCenterIds])
-
-  const visibleRoomIds = useMemo(() => {
-    if (selectedRoomIds.length > 0) return selectedRoomIds
-    return roomsForSelectedCenters.map(r => r.id)
-  }, [selectedRoomIds, roomsForSelectedCenters])
-
-  const visibleRooms = useMemo(() => {
-    const set = new Set(visibleRoomIds)
-    return roomsForSelectedCenters.filter(r => set.has(r.id))
-  }, [visibleRoomIds, roomsForSelectedCenters])
-
-  const centerIdToName = useMemo(() => {
-    const m = new Map<string, string>()
-    centers.forEach(c => m.set(c.id, c.name))
-    return m
-  }, [centers])
-
-  const centerIdToStyle = useMemo(() => {
-    const defaultStyle: CenterStyle = {
-      bg: 'bg-gray-50',
-      text: 'text-gray-700',
-      border: 'border-gray-200',
-      badge: 'bg-gray-400',
-      Icon: Home,
-    }
-    const m = new Map<string, CenterStyle>()
-    centers.forEach((c) => {
-      const preset = centerStylePresets[c.id]
-      m.set(c.id, preset ?? defaultStyle)
-    })
-    return m
-  }, [centers])
-
-  useEffect(() => {
-    let mounted = true
-      ; (async () => {
-        const data = await ScheduleService.getBookingsByDate(
-          selectedDate,
-          undefined,
-          visibleRoomIds,
-        )
-        if (!mounted) return
-        setBookings(data)
-      })()
-    return () => {
-      mounted = false
-    }
-  }, [selectedDate, visibleRoomIds])
-
-  // Keep selected rooms aligned with available rooms for selected centers
-  useEffect(() => {
-    const newRoomIds = roomsForSelectedCenters.map(r => r.id)
-    const allowed = new Set(newRoomIds)
-    setSelectedRoomIds(curr => {
-      const filtered = curr.filter(id => allowed.has(id))
-      if (filtered.length > 0) return filtered
-      return newRoomIds
-    })
-  }, [roomsForSelectedCenters])
-
-  // centers/rooms are managed via MultiSelect components
-
-  function changeDate(nextIso: string) {
-    const next = isoToDate(nextIso)
-    const curr = isoToDate(selectedDate)
-    setSlideClass(next.getTime() > curr.getTime() ? 'slide-in-left' : 'slide-in-right')
-    setSelectedDate(nextIso)
-  }
-
-  // Drag and drop handlers
-  function handleDragStart(booking: Booking) {
-    setDraggedBooking(booking)
-  }
-
-  function handleDragEnd() {
-    setDraggedBooking(null)
-  }
-
-  function handleDragOver(e: React.DragEvent) {
-    e.preventDefault()
-  }
-
-  async function handleDrop(e: React.DragEvent, roomId: string) {
-    e.preventDefault()
-    
-    if (!draggedBooking) return
-
-    // Calculate the new time based on drop position
-    const rect = e.currentTarget.getBoundingClientRect()
-    const offsetY = e.clientY - rect.top
-    const newStartMinutes = Math.floor(offsetY / pxPerMinute)
-    const newStartHour = Math.floor(newStartMinutes / 60)
-    const newStartMin = newStartMinutes % 60
-    
-    // Calculate duration of the booking
-    const oldStartMinutes = parseTimeToMinutes(draggedBooking.start)
-    const oldEndMinutes = parseTimeToMinutes(draggedBooking.end)
-    const duration = oldEndMinutes - oldStartMinutes
-    
-    // Calculate new end time
-    const newEndMinutes = newStartMinutes + duration
-    const newEndHour = Math.floor(newEndMinutes / 60)
-    const newEndMin = newEndMinutes % 60
-    
-    // Format times
-    const newStart = `${String(newStartHour).padStart(2, '0')}:${String(newStartMin).padStart(2, '0')}`
-    const newEnd = `${String(newEndHour).padStart(2, '0')}:${String(newEndMin).padStart(2, '0')}`
-    
-    // Store pending update and show confirmation modal
-    setPendingUpdate({
-      bookingId: draggedBooking.id,
-      roomId,
-      start: newStart,
-      end: newEnd,
-      oldRoomId: draggedBooking.roomId,
-      oldStart: draggedBooking.start,
-      oldEnd: draggedBooking.end,
-    })
-    setShowConfirmModal(true)
-    setDraggedBooking(null)
-  }
-
-  async function confirmBookingUpdate() {
-    if (!pendingUpdate) return
-    
-    try {
-      // Update booking in the service
-      await ScheduleService.updateBooking(pendingUpdate.bookingId, {
-        roomId: pendingUpdate.roomId,
-        start: pendingUpdate.start,
-        end: pendingUpdate.end,
-      })
-      
-      // Update local state
-      setBookings(prev => prev.map(b => 
-        b.id === pendingUpdate.bookingId 
-          ? { ...b, roomId: pendingUpdate.roomId, start: pendingUpdate.start, end: pendingUpdate.end }
-          : b
-      ))
-    } catch (error) {
-      console.error('Failed to update booking:', error)
-    }
-    
-    setShowConfirmModal(false)
-    setPendingUpdate(null)
-  }
-
-  function cancelBookingUpdate() {
-    setShowConfirmModal(false)
-    setPendingUpdate(null)
-  }
-
-  const centerOptions: MultiSelectOption[] = useMemo(() => centers.map(c => ({ value: c.id, label: c.name })), [centers])
-  const roomOptions: MultiSelectOption[] = useMemo(() => roomsForSelectedCenters.map(r => ({ value: r.id, label: r.name })), [roomsForSelectedCenters])
-
-  return (
-    <>
-      <header className="bg-gray-50 p-4">
-        <div className="flex items-end gap-2">
-          <div className="flex flex-col">
-            <div className="flex items-center gap-2">
-              <Button className='border-blue-400 border-2 text-blue-400 hover:bg-blue-400 hover:text-white px-8 py-5 cursor-pointer rounded-2xl bg-transparent' onClick={() => changeDate(getTodayIsoDate())}>Hoje</Button>
-              <DatePicker value={selectedDate} onChange={changeDate} />
-            </div>
-          </div>
-        </div>
-      </header>
-      <div className="p-4 space-y-4">
-
-        <div className="flex flex-wrap items-end gap-4">
-          <div className="min-w-80 w-md">
-            <span className="text-sm text-gray-600">Centros cirúrgicos</span>
-            <div className="mt-2">
-              <MultiSelect
-                placeholder="Selecione os centros..."
-                options={centerOptions}
-                values={selectedCenterIds}
-                onChange={setSelectedCenterIds}
-              />
-            </div>
-          </div>
-
-          <div className="min-w-80 w-md">
-            <span className="text-sm text-gray-600">Salas</span>
-            <div className="mt-2">
-              <MultiSelect
-                placeholder="Selecione as salas..."
-                options={roomOptions}
-                values={visibleRoomIds}
-                onChange={setSelectedRoomIds}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className={`rounded-2xl overflow-hidden ${slideClass}`} key={selectedDate}>
-          <div className="grid" style={{ gridTemplateColumns: `120px 1fr` }}>
-            <div className="p-3 text-gray-600">Horários</div>
-            <div className="overflow-x-auto">
-              <div className="min-w-max">
-                <div className="grid border-b border-gray-300" style={{ gridTemplateColumns: `repeat(${visibleRooms.length}, minmax(180px, 1fr))` }}>
-                  {visibleRooms.map(room => {
-                    const style = centerIdToStyle.get(room.centerId)
-                    const Icon = style?.Icon
-                    return (
-                      <div key={room.id} className={`p-3 border-r border-gray-300 last:border-r-0 bg-gray-100`}>
-                        <div className="flex items-center gap-2">
-                          {Icon ? <Icon className="h-4 w-4" color={style?.color} /> : <span className={`inline-block h-2.5 w-2.5 rounded-full ${style?.badge ?? 'bg-gray-400'}`} />}
-                          <div className="font-medium">{room.name}</div>
-                        </div>
-                        <div className={`text-xs text-black`}>{centerIdToName.get(room.centerId) ?? ''}</div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid" style={{ gridTemplateColumns: `120px 1fr` }}>
-            <div className="">
-              <div className="relative" style={{ height: `${rowHeightPx * 24}px` }}>
-                {hours.map(h => (
-                  <div key={h} className="flex items-start border-b border-gray-300 last:border-b-0" style={{ height: `${rowHeightPx}px` }}>
-                    <div className="px-3 text-xs text-gray-700 font-semibold">{formatHourLabel(h)}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="overflow-x-auto">
-              <div className="min-w-max">
-                <div className="relative" style={{ height: `${rowHeightPx * 24}px` }}>
-                  <div
-                    className="absolute inset-0 grid"
-                    style={{ gridTemplateRows: `repeat(24, ${rowHeightPx}px)`, gridTemplateColumns: `repeat(${visibleRooms.length}, minmax(180px, 1fr))` }}
-                  >
-                    {Array.from({ length: 24 * visibleRooms.length }, (_, idx) => {
-                      const cols = visibleRooms.length
-                      const isLastCol = cols > 0 ? (idx % cols) === cols - 1 : false
-                      const isLastRow = Math.floor(idx / (cols || 1)) === 23
-                      return (
-                        <div
-                          key={idx}
-                          className={`border-gray-300 ${isLastCol ? '' : 'border-r'} ${isLastRow ? '' : 'border-b'}`}
-                        />
-                      )
-                    })}
-                  </div>
-
-                  <div className="absolute inset-0" style={{ display: 'grid', gridTemplateColumns: `repeat(${visibleRooms.length}, minmax(180px, 1fr))` }}>
-                    {visibleRooms.map(room => {
-                      const roomBookings = bookings.filter(b => b.roomId === room.id)
-                      return (
-                        <div 
-                          key={room.id} 
-                          className="relative border-r border-gray-300 last:border-r-0"
-                          onDragOver={handleDragOver}
-                          onDrop={(e) => handleDrop(e, room.id)}
-                        >
-                          {roomBookings.map(b => {
-                            const startM = parseTimeToMinutes(b.start)
-                            const endM = Math.max(startM + 15, parseTimeToMinutes(b.end))
-                            const top = startM * pxPerMinute
-                            const height = Math.max(20, (endM - startM) * pxPerMinute)
-                            const style = centerIdToStyle.get(room.centerId)
-                            return (
-                              <div
-                                key={b.id}
-                                draggable
-                                onDragStart={() => handleDragStart(b)}
-                                onDragEnd={handleDragEnd}
-                                className={`absolute left-2 right-2 rounded text-white shadow cursor-move hover:shadow-lg transition-shadow ${style?.badge ?? 'bg-blue-500'}`}
-                                style={{ top, height }}
-                                title={`${b.title} (${b.start} - ${b.end})`}
-                              >
-                                <div className="text-xs font-semibold px-2 pt-1 truncate">{b.title}</div>
-                                <div className="text-[11px] px-2 pb-1 opacity-90">{b.start} - {b.end}</div>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <ConfirmationModal
-        isOpen={showConfirmModal}
-        onConfirm={confirmBookingUpdate}
-        onCancel={cancelBookingUpdate}
-        title="Confirmar alteração de agendamento"
-        message={
-          pendingUpdate
-            ? `Deseja confirmar a alteração do agendamento para ${pendingUpdate.start} - ${pendingUpdate.end}?`
-            : ''
+    useEffect(() => {
+        let mounted = true
+            ; (async () => {
+                const [fetchedCenters, fetchedRooms] = await Promise.all([
+                    ScheduleService.getSurgeryCenters(),
+                    ScheduleService.getRooms(),
+                ])
+                if (!mounted) return
+                setCenters(fetchedCenters)
+                setAllRooms(fetchedRooms)
+            })()
+        return () => {
+            mounted = false
         }
-      />
-    </>
-  )
+    }, [])
+
+    const roomsForSelectedCenters = useMemo(() => {
+        if (!selectedCenterIds || selectedCenterIds.length === 0) return allRooms
+        const set = new Set(selectedCenterIds)
+        return allRooms.filter(r => set.has(r.centerId))
+    }, [allRooms, selectedCenterIds])
+
+    const visibleRoomIds = useMemo(() => {
+        if (selectedRoomIds.length > 0) return selectedRoomIds
+        return roomsForSelectedCenters.map(r => r.id)
+    }, [selectedRoomIds, roomsForSelectedCenters])
+
+    const visibleRooms = useMemo(() => {
+        const set = new Set(visibleRoomIds)
+        return roomsForSelectedCenters.filter(r => set.has(r.id))
+    }, [visibleRoomIds, roomsForSelectedCenters])
+
+    const centerIdToName = useMemo(() => {
+        const m = new Map<string, string>()
+        centers.forEach(c => m.set(c.id, c.name))
+        return m
+    }, [centers])
+
+    const centerIdToStyle = useMemo(() => {
+        const defaultStyle: CenterStyle = {
+            bg: 'bg-gray-50',
+            text: 'text-gray-700',
+            border: 'border-gray-200',
+            badge: 'bg-gray-400',
+            Icon: Home,
+        }
+        const m = new Map<string, CenterStyle>()
+        centers.forEach((c) => {
+            const preset = centerStylePresets[c.id]
+            m.set(c.id, preset ?? defaultStyle)
+        })
+        return m
+    }, [centers])
+
+    useEffect(() => {
+        let mounted = true
+            ; (async () => {
+                const data = await ScheduleService.getBookingsByDate(
+                    selectedDate,
+                    undefined,
+                    visibleRoomIds,
+                )
+                if (!mounted) return
+                setBookings(data)
+            })()
+        return () => {
+            mounted = false
+        }
+    }, [selectedDate, visibleRoomIds])
+
+    // Keep selected rooms aligned with available rooms for selected centers
+    useEffect(() => {
+        const newRoomIds = roomsForSelectedCenters.map(r => r.id)
+        const allowed = new Set(newRoomIds)
+        setSelectedRoomIds(curr => {
+            const filtered = curr.filter(id => allowed.has(id))
+            if (filtered.length > 0) return filtered
+            return newRoomIds
+        })
+    }, [roomsForSelectedCenters])
+
+    // centers/rooms are managed via MultiSelect components
+
+    function changeDate(nextIso: string) {
+        const next = isoToDate(nextIso)
+        const curr = isoToDate(selectedDate)
+        setSlideClass(next.getTime() > curr.getTime() ? 'slide-in-left' : 'slide-in-right')
+        setSelectedDate(nextIso)
+    }
+
+    const centerOptions: MultiSelectOption[] = useMemo(() => centers.map(c => ({ value: c.id, label: c.name })), [centers])
+    const roomOptions: MultiSelectOption[] = useMemo(() => roomsForSelectedCenters.map(r => ({ value: r.id, label: r.name })), [roomsForSelectedCenters])
+
+    return (
+        <>
+            <header className="bg-gray-50 p-4 flex justify-between items-center">
+                <div className="flex items-center gap-12">
+                    <div className="nav-brand" onClick={() => setShowCalendar(false)} style={{ cursor: 'pointer' }}>
+                        <i className="fas fa-hospital"></i>
+                        <span>CoreMed</span>
+                    </div>
+                    <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                            <Button className='border-blue-400 border-2 text-blue-400 hover:bg-blue-400 hover:text-white px-8 py-5 cursor-pointer rounded-2xl bg-transparent' onClick={() => changeDate(getTodayIsoDate())}>Hoje</Button>
+                            <DatePicker value={selectedDate} onChange={changeDate} />
+                        </div>
+                    </div>
+                </div>
+
+                <ul className="nav-menu">
+                    <li><a href="#" className={!showCalendar ? 'active' : ''} onClick={() => setShowCalendar(false)}><i className="fas fa-home"></i> Dashboard</a></li>
+                    <li><a href="#" className={showCalendar ? 'active' : ''} onClick={() => setShowCalendar(true)}><i className="fas fa-calendar-plus"></i> Agendar</a></li>
+                </ul>
+            </header>
+            <div className="p-4 space-y-4">
+
+                <div className="flex flex-wrap items-end gap-4">
+                    <div className="min-w-80 w-md">
+                        <span className="text-sm text-gray-600">Centros cirúrgicos</span>
+                        <div className="mt-2">
+                            <MultiSelect
+                                placeholder="Selecione os centros..."
+                                options={centerOptions}
+                                values={selectedCenterIds}
+                                onChange={setSelectedCenterIds}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="min-w-80 w-md">
+                        <span className="text-sm text-gray-600">Salas</span>
+                        <div className="mt-2">
+                            <MultiSelect
+                                placeholder="Selecione as salas..."
+                                options={roomOptions}
+                                values={visibleRoomIds}
+                                onChange={setSelectedRoomIds}
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <div className={`rounded-2xl overflow-hidden ${slideClass}`} key={selectedDate}>
+                    <div className="grid" style={{ gridTemplateColumns: `120px 1fr` }}>
+                        <div className="p-3 text-gray-600">Horários</div>
+                        <div className="overflow-x-auto">
+                            <div className="min-w-max">
+                                <div className="grid border-b border-gray-300" style={{ gridTemplateColumns: `repeat(${visibleRooms.length}, minmax(180px, 1fr))` }}>
+                                    {visibleRooms.map(room => {
+                                        const style = centerIdToStyle.get(room.centerId)
+                                        const Icon = style?.Icon
+                                        return (
+                                            <div key={room.id} className={`p-3 border-r border-gray-300 last:border-r-0 bg-gray-100`}>
+                                                <div className="flex items-center gap-2">
+                                                    {Icon ? <Icon className="h-4 w-4" color={style?.color} /> : <span className={`inline-block h-2.5 w-2.5 rounded-full ${style?.badge ?? 'bg-gray-400'}`} />}
+                                                    <div className="font-medium">{room.name}</div>
+                                                </div>
+                                                <div className={`text-xs text-black`}>{centerIdToName.get(room.centerId) ?? ''}</div>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid" style={{ gridTemplateColumns: `120px 1fr` }}>
+                        <div className="">
+                            <div className="relative" style={{ height: `${rowHeightPx * 24}px` }}>
+                                {hours.map(h => (
+                                    <div key={h} className="flex items-start border-b border-gray-300 last:border-b-0" style={{ height: `${rowHeightPx}px` }}>
+                                        <div className="px-3 text-xs text-gray-700 font-semibold">{formatHourLabel(h)}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="overflow-x-auto">
+                            <div className="min-w-max">
+                                <div className="relative" style={{ height: `${rowHeightPx * 24}px` }}>
+                                    <div
+                                        className="absolute inset-0 grid"
+                                        style={{ gridTemplateRows: `repeat(24, ${rowHeightPx}px)`, gridTemplateColumns: `repeat(${visibleRooms.length}, minmax(180px, 1fr))` }}
+                                    >
+                                        {Array.from({ length: 24 * visibleRooms.length }, (_, idx) => {
+                                            const cols = visibleRooms.length
+                                            const isLastCol = cols > 0 ? (idx % cols) === cols - 1 : false
+                                            const isLastRow = Math.floor(idx / (cols || 1)) === 23
+                                            return (
+                                                <div
+                                                    key={idx}
+                                                    className={`border-gray-300 ${isLastCol ? '' : 'border-r'} ${isLastRow ? '' : 'border-b'}`}
+                                                />
+                                            )
+                                        })}
+                                    </div>
+
+                                    <div className="absolute inset-0" style={{ display: 'grid', gridTemplateColumns: `repeat(${visibleRooms.length}, minmax(180px, 1fr))` }}>
+                                        {visibleRooms.map(room => {
+                                            const roomBookings = bookings.filter(b => b.roomId === room.id)
+                                            return (
+                                                <div key={room.id} className="relative border-r border-gray-300 last:border-r-0">
+                                                    {roomBookings.map(b => {
+                                                        const startM = parseTimeToMinutes(b.start)
+                                                        const endM = Math.max(startM + 15, parseTimeToMinutes(b.end))
+                                                        const top = startM * pxPerMinute
+                                                        const height = Math.max(20, (endM - startM) * pxPerMinute)
+                                                        const style = centerIdToStyle.get(room.centerId)
+                                                        return (
+                                                            <div
+                                                                key={b.id}
+                                                                className={`absolute left-2 right-2 rounded text-white shadow ${style?.badge ?? 'bg-blue-500'}`}
+                                                                style={{ top, height }}
+                                                                title={`${b.title} (${b.start} - ${b.end})`}
+                                                            >
+                                                                <div className="text-xs font-semibold px-2 pt-1 truncate">{b.title}</div>
+                                                                <div className="text-[11px] px-2 pb-1 opacity-90">{b.start} - {b.end}</div>
+                                                            </div>
+                                                        )
+                                                    })}
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </>
+    )
 }
