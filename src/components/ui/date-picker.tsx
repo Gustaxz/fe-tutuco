@@ -52,7 +52,7 @@ export function DatePicker({ value, onChange }: { value: string, onChange: (next
             <ChevronDown className="h-4 w-4 opacity-60" strokeWidth={3}/>
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="p-0">
+        <PopoverContent align="start" className="p-2">
           <Calendar
             selected={isoToDate(value)}
             onSelect={(d: Date | undefined) => d && onChange(dateToIso(d))}
