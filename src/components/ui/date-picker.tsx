@@ -46,7 +46,7 @@ export function DatePicker({ value, onChange }: { value: string, onChange: (next
       <Popover>
         <PopoverTrigger asChild>
           <Button
-            className="text-left gap-4 font-normal text-2xl min-w-56 bg-transparent text-black hover:bg-gray-100 border-0"
+            className="text-left cursor-pointer gap-4 font-normal text-2xl min-w-56 bg-transparent rounded-2xl px-4 py-2 text-black hover:bg-gray-100 border-0"
           >
             {formatDisplayDate(value)}
             <ChevronDown className="h-4 w-4 opacity-60" strokeWidth={3}/>
