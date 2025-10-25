@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ScheduleService, type Booking, type Room, type SurgeryCenter } from './api/ScheduleService'
+import { ScheduleService, type Booking, type Room, type SurgeryCenter } from './api/SchedulerService'
 import { DatePicker } from './components/ui/date-picker'
 import { Button } from './components/ui/button'
 
