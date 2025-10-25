@@ -6,6 +6,7 @@ import { MultiSelect, type MultiSelectOption } from '../ui/multi-select'
 import { Home } from 'lucide-react'
 import { FaHeart, FaBrain, FaBone, FaVenus } from 'react-icons/fa'
 import { GiKidneys } from 'react-icons/gi'
+import { BookingDetailsModal } from '../BookingModal/BookingDetailsModal'
 
 function formatHourLabel(hour: number): string {
     return `${hour.toString().padStart(2, '0')}:00`
@@ -65,6 +66,10 @@ export function CalendarScreen({ setShowCalendar, showCalendar }: CalendarScreen
     const pxPerMinute = rowHeightPx / 60
 
     const [slideClass, setSlideClass] = useState<string>('')
+
+    // Modal state
+    const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
+    const [showBookingModal, setShowBookingModal] = useState(false)
 
     useEffect(() => {
         let mounted = true
@@ -154,6 +159,16 @@ export function CalendarScreen({ setShowCalendar, showCalendar }: CalendarScreen
         const curr = isoToDate(selectedDate)
         setSlideClass(next.getTime() > curr.getTime() ? 'slide-in-left' : 'slide-in-right')
         setSelectedDate(nextIso)
+    }
+
+    function handleBookingClick(booking: Booking) {
+        setSelectedBooking(booking)
+        setShowBookingModal(true)
+    }
+
+    function closeBookingModal() {
+        setShowBookingModal(false)
+        setSelectedBooking(null)
     }
 
     const centerOptions: MultiSelectOption[] = useMemo(() => centers.map(c => ({ value: c.id, label: c.name })), [centers])
@@ -276,7 +291,8 @@ export function CalendarScreen({ setShowCalendar, showCalendar }: CalendarScreen
                                                         return (
                                                             <div
                                                                 key={b.id}
-                                                                className={`absolute left-2 right-2 rounded text-white shadow ${style?.badge ?? 'bg-blue-500'}`}
+                                                                onClick={() => handleBookingClick(b)}
+                                                                className={`absolute left-2 right-2 rounded text-white shadow cursor-pointer hover:shadow-lg transition-shadow ${style?.badge ?? 'bg-blue-500'}`}
                                                                 style={{ top, height }}
                                                                 title={`${b.title} (${b.start} - ${b.end})`}
                                                             >
@@ -295,6 +311,14 @@ export function CalendarScreen({ setShowCalendar, showCalendar }: CalendarScreen
                     </div>
                 </div>
             </div>
+
+            <BookingDetailsModal
+                isOpen={showBookingModal}
+                onClose={closeBookingModal}
+                booking={selectedBooking}
+                room={selectedBooking ? visibleRooms.find(r => r.id === selectedBooking.roomId) ?? null : null}
+                centerName={selectedBooking ? centerIdToName.get(visibleRooms.find(r => r.id === selectedBooking.roomId)?.centerId ?? '') ?? '' : ''}
+            />
         </>
     )
 }
