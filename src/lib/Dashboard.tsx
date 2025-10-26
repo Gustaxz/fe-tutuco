@@ -205,13 +205,25 @@ const Dashboard = () => {
                 <div className="timeline">
                   {dashboardData.cirurgias.length > 0 ? (
                     dashboardData.cirurgias.map((cirurgia, index) => (
-                      <div key={index} className="timeline-item">
+                      <div 
+                        key={index} 
+                        className="timeline-item" 
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => setShowCalendar(true)}
+                      >
                         <div>
-                          <strong>{cirurgia.start} - {cirurgia.end}</strong>
-                          <h4 style={{ margin: '0.5rem 0', color: 'var(--primary)' }}>{cirurgia.title}</h4>
-                          <p style={{ margin: '0.25rem 0', color: '#666' }}>Dr. {cirurgia.doctorName}</p>
-                          <p style={{ margin: '0.25rem 0', color: '#666' }}>Sala: {cirurgia.roomId}</p>
-                          <span className={`status-badge ${cirurgia.urgency}`}>{cirurgia.urgency}</span>
+                          <strong>{cirurgia.start}</strong>
+                          <h4 style={{ margin: '0.25rem 0', color: 'var(--primary)' }}>{cirurgia.title}</h4>
+                          <p style={{ margin: '0.25rem 0', color: '#666', fontSize: '0.9rem' }}>Paciente: {cirurgia.patientName}</p>
+                          <span className={`status-badge ${cirurgia.urgency}`} style={{ 
+                            padding: '0.25rem 0.5rem', 
+                            borderRadius: '0.25rem', 
+                            fontSize: '0.75rem',
+                            backgroundColor: cirurgia.urgency === 'high' ? '#ef4444' : cirurgia.urgency === 'medium' ? '#f59e0b' : '#10b981',
+                            color: 'white'
+                          }}>
+                            {cirurgia.urgency === 'high' ? 'Alta' : cirurgia.urgency === 'medium' ? 'Média' : 'Baixa'}
+                          </span>
                         </div>
                       </div>
                     ))
