@@ -1,13 +1,14 @@
-import { useEffect, useMemo, useState, type ComponentType } from 'react'
+import { useEffect, useMemo, useState, type ComponentType, useCallback } from 'react'
 import { type Booking } from '../../api/ScheduleMock'
 import { ScheduleApiService, type Room, type SurgeryCenter } from '../../api/ScheduleApi'
 import { DatePicker } from '../ui/date-picker'
 import { Button } from '../ui/button'
 import { MultiSelect, type MultiSelectOption } from '../ui/multi-select'
-import { Home } from 'lucide-react'
+import { Home, RefreshCw } from 'lucide-react'
 import { FaHeart, FaBrain, FaBone, FaVenus } from 'react-icons/fa'
 import { GiKidneys } from 'react-icons/gi'
 import { BookingDetailsModal } from '../BookingModal/BookingDetailsModal'
+import { getStatusColors, translateStatus } from '../../utils/statusMapper'
 
 function formatHourLabel(hour: number): string {
     return `${hour.toString().padStart(2, '0')}:00`
@@ -73,6 +74,9 @@ export function CalendarScreen({ setShowCalendar, showCalendar }: CalendarScreen
     const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
     const [showBookingModal, setShowBookingModal] = useState(false)
 
+    // Refresh state
+    const [isRefreshing, setIsRefreshing] = useState(false)
+
     useEffect(() => {
         let mounted = true
             ; (async () => {
@@ -132,27 +136,39 @@ export function CalendarScreen({ setShowCalendar, showCalendar }: CalendarScreen
         return m
     }, [centers])
 
-    useEffect(() => {
-        let mounted = true
-            ; (async () => {
-                try {
-                    const data = await ScheduleApiService.getBookingsByDate(
-                        selectedDate,
-                        undefined,
-                        visibleRoomIds,
-                    )
-                    if (!mounted) return
-                    setBookings(data)
-                } catch (error) {
-                    console.error('Error loading bookings:', error)
-                    if (!mounted) return
-                    setBookings([])
-                }
-            })()
-        return () => {
-            mounted = false
+    // Function to fetch bookings - can be called manually or by scheduler
+    const fetchBookings = useCallback(async () => {
+        try {
+            setIsRefreshing(true)
+            const data = await ScheduleApiService.getBookingsByDate(
+                selectedDate,
+                undefined,
+                visibleRoomIds,
+            )
+            setBookings(data)
+        } catch (error) {
+            console.error('Error loading bookings:', error)
+            setBookings([])
+        } finally {
+            setIsRefreshing(false)
         }
     }, [selectedDate, visibleRoomIds])
+
+    // Fetch bookings when date or rooms change
+    useEffect(() => {
+        fetchBookings()
+    }, [fetchBookings])
+
+    // Auto-refresh every 10 seconds
+    useEffect(() => {
+        const intervalId = setInterval(() => {
+            fetchBookings()
+        }, 10000) // 10 seconds
+
+        return () => {
+            clearInterval(intervalId)
+        }
+    }, [fetchBookings])
 
     // Keep selected rooms aligned with available rooms for selected centers
     useEffect(() => {
@@ -210,30 +226,41 @@ export function CalendarScreen({ setShowCalendar, showCalendar }: CalendarScreen
             </header>
             <div className="p-4 space-y-4">
 
-                <div className="flex flex-wrap items-end gap-4">
-                    <div className="min-w-80 w-md">
-                        <span className="text-sm text-gray-600">Centros cirúrgicos</span>
-                        <div className="mt-2">
-                            <MultiSelect
-                                placeholder="Selecione os centros..."
-                                options={centerOptions}
-                                values={selectedCenterIds}
-                                onChange={setSelectedCenterIds}
-                            />
+                <div className="flex flex-wrap items-end justify-between gap-4">
+                    <div className="flex flex-wrap items-end gap-4">
+                        <div className="min-w-80 w-md">
+                            <span className="text-sm text-gray-600">Centros cirúrgicos</span>
+                            <div className="mt-2">
+                                <MultiSelect
+                                    placeholder="Selecione os centros..."
+                                    options={centerOptions}
+                                    values={selectedCenterIds}
+                                    onChange={setSelectedCenterIds}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="min-w-80 w-md">
+                            <span className="text-sm text-gray-600">Salas</span>
+                            <div className="mt-2">
+                                <MultiSelect
+                                    placeholder="Selecione as salas..."
+                                    options={roomOptions}
+                                    values={visibleRoomIds}
+                                    onChange={setSelectedRoomIds}
+                                />
+                            </div>
                         </div>
                     </div>
 
-                    <div className="min-w-80 w-md">
-                        <span className="text-sm text-gray-600">Salas</span>
-                        <div className="mt-2">
-                            <MultiSelect
-                                placeholder="Selecione as salas..."
-                                options={roomOptions}
-                                values={visibleRoomIds}
-                                onChange={setSelectedRoomIds}
-                            />
-                        </div>
-                    </div>
+                    <Button 
+                        className='border-green-400 border-2 text-green-400 hover:bg-green-400 hover:text-white px-6 py-3 cursor-pointer rounded-2xl bg-transparent flex items-center gap-2 mb-2' 
+                        onClick={() => fetchBookings()}
+                        disabled={isRefreshing}
+                    >
+                        <RefreshCw className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        Atualizar
+                    </Button>
                 </div>
 
                 <div className={`rounded-2xl overflow-hidden ${slideClass}`} key={selectedDate}>
@@ -301,6 +328,7 @@ export function CalendarScreen({ setShowCalendar, showCalendar }: CalendarScreen
                                                         const top = startM * pxPerMinute
                                                         const height = Math.max(20, (endM - startM) * pxPerMinute)
                                                         const style = centerIdToStyle.get(room.centerId)
+                                                        const statusStyle = getStatusColors(b.status)
                                                         return (
                                                             <div
                                                                 key={b.id}
@@ -309,8 +337,16 @@ export function CalendarScreen({ setShowCalendar, showCalendar }: CalendarScreen
                                                                 style={{ top, height }}
                                                                 title={`${b.title} (${b.start} - ${b.end})`}
                                                             >
-                                                                <div className="text-xs font-semibold px-2 pt-1 truncate">{b.title}</div>
-                                                                <div className="text-[11px] px-2 pb-1 opacity-90">{b.start} - {b.end}</div>
+                                                                <div className="px-2 pt-1 space-y-1">
+                                                                    <div className="flex items-center justify-between gap-1">
+                                                                        <div className="text-xs font-semibold truncate flex-1">{b.title}</div>
+                                                                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold whitespace-nowrap ${statusStyle.bg} ${statusStyle.text}`}>
+                                                                            {statusStyle.icon}  {translateStatus(b.status)}
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="text-[11px] opacity-90">{b.start} - {b.end}</div>
+                                                        
+                                                                </div>
                                                             </div>
                                                         )
                                                     })}

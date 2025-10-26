@@ -17,6 +17,8 @@ export type TeamMember = {
   available?: boolean
 }
 
+export type SurgeryStatus = 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED'
+
 export type Booking = {
   id: string
   title: string
@@ -28,6 +30,7 @@ export type Booking = {
   patientName: string
   surgeryType: string
   urgency: 'low' | 'medium' | 'high' | 'emergency'
+  status: SurgeryStatus
   team?: TeamMember[]
 }
 
@@ -62,7 +65,8 @@ const bookings: Booking[] = [
     doctorName: 'Dr. João Silva',
     patientName: 'Maria Santos',
     surgeryType: 'Revascularização do Miocárdio',
-    urgency: 'high'
+    urgency: 'high',
+    status: 'COMPLETED'
   },
   { 
     id: 'b2', 
@@ -74,7 +78,8 @@ const bookings: Booking[] = [
     doctorName: 'Dra. Ana Costa',
     patientName: 'José Oliveira',
     surgeryType: 'Substituição de Válvula Aórtica',
-    urgency: 'high'
+    urgency: 'high',
+    status: 'IN_PROGRESS'
   },
   
   // Centro Cardíaco - Room 2
@@ -88,7 +93,8 @@ const bookings: Booking[] = [
     doctorName: 'Dr. Roberto Cardoso',
     patientName: 'Ana Paula Martins',
     surgeryType: 'Angioplastia Coronariana',
-    urgency: 'emergency'
+    urgency: 'emergency',
+    status: 'COMPLETED'
   },
   { 
     id: 'b4', 
@@ -100,7 +106,8 @@ const bookings: Booking[] = [
     doctorName: 'Dr. Roberto Cardoso',
     patientName: 'Fernando Silva',
     surgeryType: 'Cateterismo Cardíaco',
-    urgency: 'medium'
+    urgency: 'medium',
+    status: 'SCHEDULED'
   },
 
   // Centro Cardíaco - Room 3
@@ -114,7 +121,8 @@ const bookings: Booking[] = [
     doctorName: 'Dra. Beatriz Coração',
     patientName: 'Antônio Rodrigues',
     surgeryType: 'Implante de Marcapasso',
-    urgency: 'medium'
+    urgency: 'medium',
+    status: 'COMPLETED'
   },
   
   // Centro Neurocirúrgico - Room 1
@@ -128,7 +136,8 @@ const bookings: Booking[] = [
     doctorName: 'Dr. Pedro Lima',
     patientName: 'Carlos Ferreira',
     surgeryType: 'Craniotomia para Tumor',
-    urgency: 'high'
+    urgency: 'high',
+    status: 'COMPLETED'
   },
   { 
     id: 'b7', 
@@ -140,7 +149,8 @@ const bookings: Booking[] = [
     doctorName: 'Dra. Lucia Neuro',
     patientName: 'Ricardo Almeida',
     surgeryType: 'Descompressão Medular',
-    urgency: 'medium'
+    urgency: 'medium',
+    status: 'SCHEDULED'
   },
 
   // Centro Neurocirúrgico - Room 2
@@ -154,7 +164,8 @@ const bookings: Booking[] = [
     doctorName: 'Dr. Marcos Neuro',
     patientName: 'Paula Mendes',
     surgeryType: 'Clipagem de Aneurisma',
-    urgency: 'emergency'
+    urgency: 'emergency',
+    status: 'IN_PROGRESS'
   },
   { 
     id: 'b9', 
@@ -166,7 +177,8 @@ const bookings: Booking[] = [
     doctorName: 'Dr. Marcos Neuro',
     patientName: 'Juliana Costa',
     surgeryType: 'Microdiscectomia',
-    urgency: 'low'
+    urgency: 'low',
+    status: 'SCHEDULED'
   },
 ]
 
