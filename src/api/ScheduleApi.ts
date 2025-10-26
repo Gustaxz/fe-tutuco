@@ -1,5 +1,6 @@
 import axios from 'axios'
 import type { Booking, TeamMember, SurgeryStatus } from './ScheduleMock'
+export type { Booking } from './ScheduleMock'
 
 const API_BASE_URL = 'https://project.freshroots.com.br'
 const HOSPITAL_ID = '10e960a9-4acd-4daf-b188-7b94b6ecf74b'
