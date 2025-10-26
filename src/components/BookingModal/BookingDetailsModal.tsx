@@ -1,6 +1,7 @@
+import { useState } from 'react'
 import { Button } from '../ui/button'
 import type { Booking } from '../../api/ScheduleMock'
-import type { Room } from '../../api/ScheduleApi'
+import { ScheduleApiService, type Room } from '../../api/ScheduleApi'
 import { translateRoles } from '../../utils/roleMapper'
 import { translateStatus, getStatusColors } from '../../utils/statusMapper'
 
@@ -10,6 +11,7 @@ interface BookingDetailsModalProps {
   booking: Booking | null
   room: Room | null
   centerName: string
+  onStatusUpdate?: () => void
 }
 
 export function BookingDetailsModal({
@@ -18,8 +20,55 @@ export function BookingDetailsModal({
   booking,
   room,
   centerName,
+  onStatusUpdate,
 }: BookingDetailsModalProps) {
+  const [isUpdating, setIsUpdating] = useState(false)
+
   if (!isOpen || !booking || !room) return null
+
+  const handleStartSurgery = async () => {
+    if (!booking) return
+    
+    try {
+      setIsUpdating(true)
+      await ScheduleApiService.updateSurgeryStatus(booking.id, 'IN_PROGRESS')
+      
+      // Call the callback to refresh the calendar
+      if (onStatusUpdate) {
+        onStatusUpdate()
+      }
+      
+      // Close the modal after successful update
+      onClose()
+    } catch (error) {
+      console.error('Error starting surgery:', error)
+      alert('Erro ao iniciar cirurgia. Por favor, tente novamente.')
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  const handleFinishSurgery = async () => {
+    if (!booking) return
+    
+    try {
+      setIsUpdating(true)
+      await ScheduleApiService.updateSurgeryStatus(booking.id, 'COMPLETED')
+      
+      // Call the callback to refresh the calendar
+      if (onStatusUpdate) {
+        onStatusUpdate()
+      }
+      
+      // Close the modal after successful update
+      onClose()
+    } catch (error) {
+      console.error('Error finishing surgery:', error)
+      alert('Erro ao terminar cirurgia. Por favor, tente novamente.')
+    } finally {
+      setIsUpdating(false)
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -258,30 +307,26 @@ export function BookingDetailsModal({
         <div className="flex justify-between items-center">
           <div className="flex gap-3 pl-4">
             <Button
-              onClick={() => {
-                console.log('Iniciar cirurgia:', booking.id)
-                // TODO: Implement start surgery logic
-              }}
-              className="px-6 py-2 bg-green-500 text-white cursor-pointer hover:bg-green-600 rounded-lg flex items-center gap-2"
+              onClick={handleStartSurgery}
+              disabled={isUpdating || booking.status === 'IN_PROGRESS' || booking.status === 'COMPLETED'}
+              className="px-6 py-2 bg-green-500 text-white cursor-pointer hover:bg-green-600 rounded-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              Iniciar Cirurgia
+              {isUpdating ? 'Atualizando...' : 'Iniciar Cirurgia'}
             </Button>
 
             <Button
-              onClick={() => {
-                console.log('Terminar cirurgia:', booking.id)
-                // TODO: Implement finish surgery logic
-              }}
-              className="px-6 py-2 bg-red-500 text-white cursor-pointer hover:bg-red-600 rounded-lg flex items-center gap-2"
+              onClick={handleFinishSurgery}
+              disabled={isUpdating || booking.status === 'COMPLETED' || booking.status === 'CANCELED' || booking.status === 'SCHEDULED'}
+              className="px-6 py-2 bg-red-500 text-white cursor-pointer hover:bg-red-600 rounded-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.636 18.364a9 9 0 010-12.728m12.728 0a9 9 0 010 12.728m-9.9-2.829a5 5 0 010-7.07m7.072 0a5 5 0 010 7.07M13 12a1 1 0 11-2 0 1 1 0 012 0z" />
               </svg>
-              Terminar Cirurgia
+              {isUpdating ? 'Atualizando...' : 'Terminar Cirurgia'}
             </Button>
           </div>
 

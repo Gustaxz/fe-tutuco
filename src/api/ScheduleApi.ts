@@ -60,6 +60,7 @@ interface ApiScheduleSurgery {
   id_ocupation: string
   id_hospital: string
   date_start: string
+  status: SurgeryStatus
   date_end: string
   time_additional: number
   createdAt: string
@@ -171,16 +172,6 @@ export const ScheduleApiService = {
           type: member.type,
           available: surgery.ocupation.ocupations_check.includes(member.id), // Mock: 80% chance of being available
         }))
-
-        // Mock status based on current time comparison (will be from API later)
-        const now = new Date()
-        let status: SurgeryStatus = 'SCHEDULED'
-        if (startDate < now && endDate > now) {
-          status = 'IN_PROGRESS'
-        } else if (endDate < now) {
-          status = 'COMPLETED'
-        }
-
         
         
         return {
@@ -194,7 +185,7 @@ export const ScheduleApiService = {
             patientName: surgery.ocupation.patient.name, // Not provided by API, placeholder
             surgeryType: 'Cirurgia Geral', // Not provided by API, placeholder
             urgency,
-            status,
+            status: surgery.status,
             team,
         } as Booking
     })
@@ -221,6 +212,17 @@ export const ScheduleApiService = {
       console.error('Error fetching schedule surgeries:', error)
       // Return empty array on error instead of throwing
       return []
+    }
+  },
+
+  async updateSurgeryStatus(scheduleSurgeryId: string, status: SurgeryStatus): Promise<void> {
+    try {
+      await axios.put(`${API_BASE_URL}/schedule-surgery/${scheduleSurgeryId}`, {
+        status,
+      })
+    } catch (error) {
+      console.error('Error updating surgery status:', error)
+      throw error
     }
   },
 }

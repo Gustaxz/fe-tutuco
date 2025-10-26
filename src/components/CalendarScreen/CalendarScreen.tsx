@@ -36,6 +36,7 @@ const centerStylePresets: Record<string, CenterStyle> = {
     'fcefdfa8-47db-470d-8b9c-e68c241a9d63': { bg: 'bg-gray-100', text: 'text-black', border: 'border-gray-300', badge: 'bg-rose-500', Icon: FaHeart, color: '#ef4444' },
     // c2: Centro neurocirúrgico → brain
     c2: { bg: 'bg-gray-100', text: 'text-black', border: 'border-gray-300', badge: 'bg-violet-500', Icon: FaBrain, color: '#8b5cf6' },
+    '20e960a9-4acd-4daf-b188-7b94b6ecf74b': { bg: 'bg-gray-100', text: 'text-black', border: 'border-gray-300', badge: 'bg-violet-500', Icon: FaBrain, color: '#8b5cf6' },
     // c3: Centro ortopédico → bone
     c3: { bg: 'bg-gray-100', text: 'text-black', border: 'border-gray-300', badge: 'bg-amber-500', Icon: FaBone, color: '#f59e0b' },
     // c4: Centro urológico → kidneys
@@ -367,6 +368,7 @@ export function CalendarScreen({ setShowCalendar, showCalendar }: CalendarScreen
                 booking={selectedBooking}
                 room={selectedBooking ? visibleRooms.find(r => r.id === selectedBooking.roomId) ?? null : null}
                 centerName={selectedBooking ? centerIdToName.get(visibleRooms.find(r => r.id === selectedBooking.roomId)?.centerId ?? '') ?? '' : ''}
+                onStatusUpdate={fetchBookings}
             />
         </>
     )
