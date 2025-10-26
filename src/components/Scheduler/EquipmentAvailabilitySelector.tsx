@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Check, X, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import type { Recurso } from "./types";
-import SearchEquipmentModal from "./modal/SearchEquipmentModal";
+// import SearchEquipmentModal from "./modal/SearchEquipmentModal";
 import SearchDisposableModal from "./modal/SearchDisposableModal";
 
 export interface EquipmentAvailabilitySelectorProps {

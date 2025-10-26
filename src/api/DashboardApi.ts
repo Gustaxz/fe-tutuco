@@ -29,7 +29,8 @@ const roleMapping: Record<string, string> = {
   INVENTORY_CLERK: 'Auxiliar de estoque'
 }
 
-function mapRole(role: string): string {
+// mapRole kept for future use; avoid unused warnings by exporting
+export function mapRole(role: string): string {
   return roleMapping[role] || role
 }
 

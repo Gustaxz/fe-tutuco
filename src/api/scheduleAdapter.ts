@@ -137,7 +137,7 @@ export async function searchSlots({
     return {
       inicio: hhmmToIso(b.date, b.start),
       fim: hhmmToIso(b.date, b.end),
-      salaId: salaIdNum,
+      salaId: salaIdNum != null ? String(salaIdNum) : undefined,
       salaNome: room?.name ?? "-",
       medicoNome: medicoNome ?? "-",
       score: 1,
