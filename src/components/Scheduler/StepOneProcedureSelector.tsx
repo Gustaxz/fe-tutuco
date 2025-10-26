@@ -1,9 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
+import { Search } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import InputMask from "react-input-mask";
 import {
   Select,
   SelectContent,
@@ -16,6 +15,8 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Clock, Info } from "lucide-react";
 import type { Medico, Sala, Slot } from "./types";
+import { PatternFormat } from "react-number-format";
+import { Button } from "../ui/button";
 
 const fmtHour = (iso: string) =>
   new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -39,76 +40,75 @@ export interface StepOneProcedureSelectorProps {
   salas: Sala[];
   slots: Slot[];
   slotSelecionado: Slot | null;
-  onSlotSelecionado: (s: Slot) => void;
+  onSlotSelecionado: (s: Slot | null) => void;
+  onConsultar: () => void;
+  slotsLoading?: boolean;
+  centros: { id: number; nome: string }[];
 }
 
-export default function StepOneProcedureSelector(
-  props: StepOneProcedureSelectorProps
-) {
-  const {
-    pacienteId,
-    onPacienteId,
-    procedimento,
-    onProcedimento,
-    duracaoHoras,
-    onDuracaoHoras,
-    data,
-    onData,
-    centroId,
-    onCentroId,
-    medicoRespId,
-    onMedicoRespId,
-    salaId,
-    onSalaId,
-    medicos,
-    salas,
-    slots,
-    slotSelecionado,
-    onSlotSelecionado,
-  } = props;
-
+export default function StepOneProcedureSelector({
+  pacienteId,
+  onPacienteId,
+  procedimento,
+  onProcedimento,
+  duracaoHoras,
+  onDuracaoHoras,
+  data,
+  onData,
+  centroId,
+  onCentroId,
+  medicoRespId,
+  onMedicoRespId,
+  salaId,
+  onSalaId,
+  medicos,
+  salas,
+  slots,
+  slotSelecionado,
+  onSlotSelecionado,
+  onConsultar,
+  slotsLoading,
+  centros,
+}: StepOneProcedureSelectorProps) {
   return (
     <Card className="w-full">
       <CardHeader>
         <CardTitle>Dados, Filtros e Horários</CardTitle>
       </CardHeader>
 
-      <CardContent className="space-y-10 px-8 flex flex-col items-center">
-        <div className="w-full max-w-[1200px] space-y-6">
-          {/* Linha 1 - Paciente / Duração / Data */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-end">
-            <div className="flex flex-col flex-1 min-w-0">
+      <CardContent className="px-8 flex flex-col items-center space-y-10">
+        <div className="w-full max-w-[1200px] space-y-8">
+          {/* 🟦 Linha 1 - CPF (2/12) e Procedimento (10/12) */}
+          <div className="grid grid-cols-12 gap-4">
+            <div className="col-span-12 md:col-span-4">
               <Label className="text-sm font-medium text-muted-foreground mb-1.5">
                 Paciente (CPF)
               </Label>
-              <InputMask
-                mask="999.999.999-99"
+              <PatternFormat
+                format="###.###.###-##"
+                allowEmptyFormatting
+                mask="_"
                 value={pacienteId}
-                onChange={(e: any) => onPacienteId(e.target.value)}
-              >
-                {(inputProps: any) => (
-                  <Input
-                    {...inputProps}
-                    className="w-full h-12 text-base rounded-lg"
-                    placeholder="000.000.000-00"
-                  />
-                )}
-              </InputMask>
-            </div>
-
-            <div className="md:col-span-2 flex flex-col flex-1 min-w-0">
-              <Label className="text-sm font-medium text-muted-foreground mb-1.5">
-                Procedimento
-              </Label>
-              <Input
+                onValueChange={(values) => onPacienteId(values.value)}
+                customInput={Input}
                 className="w-full h-12 text-base rounded-lg"
-                placeholder="Ex.: Colecistectomia"
-                value={procedimento}
-                onChange={(e) => onProcedimento(e.target.value)}
+                placeholder="000.000.000-00"
+                inputMode="numeric"
               />
             </div>
 
-            <div className="flex flex-col flex-1 min-w-0">
+            <div className="col-span-12 md:col-span-5">
+              <Label className="text-sm font-medium text-muted-foreground mb-1.5">
+                Data
+              </Label>
+              <Input
+                className="w-full h-12 text-base rounded-lg"
+                type="date"
+                value={data}
+                onChange={(e) => onData(e.target.value)}
+              />
+            </div>
+            <div className="col-span-12 md:col-span-3">
               <Label className="text-sm font-medium text-muted-foreground mb-1.5">
                 Duração (h)
               </Label>
@@ -121,27 +121,13 @@ export default function StepOneProcedureSelector(
                 onChange={(e) => onDuracaoHoras(Number(e.target.value))}
               />
             </div>
-            <div className="flex flex-col flex-1 min-w-0">
-              <Label className="text-sm font-medium text-muted-foreground mb-1.5">
-                Data
-              </Label>
-              <Input
-                className="w-full h-12 text-base rounded-lg max-w-xs"
-                type="date"
-                value={data}
-                onChange={(e) => onData(e.target.value)}
-              />
-            </div>
-          </div>
 
-          {/* Linha 3 - Centro / Médico / Sala */}
-          <div className="grid grid-cols-1 md:grid-cols-1 gap-5 items-end">
-            <div className="flex flex-col flex-1 min-w-0">
+            <div className="col-span-12 md:col-span-4">
               <Label className="text-sm font-medium text-muted-foreground mb-1.5">
                 Centro Cirúrgico
               </Label>
               <Select
-                value={centroId ? String(centroId) : undefined}
+                value={centroId != null ? String(centroId) : undefined}
                 onValueChange={(v) => onCentroId(Number(v))}
               >
                 <SelectTrigger className="w-full h-12 text-base rounded-lg">
@@ -150,16 +136,19 @@ export default function StepOneProcedureSelector(
                 <SelectContent>
                   <SelectGroup>
                     <SelectLabel>Centros</SelectLabel>
-                    <SelectItem value="100">Centro A</SelectItem>
-                    <SelectItem value="200">Centro B</SelectItem>
+                    {centros.map((c) => (
+                      <SelectItem key={c.id} value={String(c.id)}>
+                        {c.nome}
+                      </SelectItem>
+                    ))}
                   </SelectGroup>
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="flex flex-col flex-1 min-w-0">
+            <div className="col-span-12 md:col-span-4">
               <Label className="text-sm font-medium text-muted-foreground mb-1.5">
-                Médico responsável
+                Responsável
               </Label>
               <Select
                 value={medicoRespId ? String(medicoRespId) : undefined}
@@ -181,7 +170,7 @@ export default function StepOneProcedureSelector(
               </Select>
             </div>
 
-            <div className="flex flex-col flex-1 min-w-0">
+            <div className="col-span-12 md:col-span-4">
               <Label className="text-sm font-medium text-muted-foreground mb-1.5">
                 Sala
               </Label>
@@ -204,10 +193,36 @@ export default function StepOneProcedureSelector(
                 </SelectContent>
               </Select>
             </div>
+            <div className="col-span-12 md:col-span-12">
+              <Label className="text-sm font-medium text-muted-foreground mb-1.5">
+                Procedimento
+              </Label>
+              <Input
+                className="w-full h-12 text-base rounded-lg"
+                placeholder="Ex.: Colecistectomia"
+                value={procedimento}
+                onChange={(e) => onProcedimento(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="col-span-12 md:col-span-12 flex justify-start mt-2">
+            <Button
+              className="h-11 px-5"
+              onClick={onConsultar}
+              disabled={
+                !centroId ||
+                !data ||
+                Number(duracaoHoras) < 0.5 ||
+                !!slotsLoading
+              }
+            >
+              <Search className="mr-2 h-4 w-4" />
+              {slotsLoading ? "Consultando..." : "Consultar horários"}
+            </Button>
           </div>
         </div>
 
-        {/* Horários */}
+        {/* 🟩 Tabela de horários */}
         <div className="w-full max-w-[1200px]">
           <div className="flex items-center gap-2 mb-2">
             <Clock className="h-4 w-4" />
@@ -230,31 +245,64 @@ export default function StepOneProcedureSelector(
                 </tr>
               </thead>
               <tbody>
-                {slots.map((s) => (
-                  <tr
-                    key={`${s.inicio}-${s.salaId ?? "x"}`}
-                    className={`border-t hover:bg-accent/40 cursor-pointer ${
-                      slotSelecionado?.inicio === s.inicio
-                        ? "bg-primary/10"
-                        : ""
-                    }`}
-                    onClick={() => onSlotSelecionado(s)}
-                  >
-                    <td className="p-2">
-                      <Checkbox
-                        checked={
+                {slotsLoading && (
+                  <tr>
+                    <td
+                      colSpan={4}
+                      className="p-4 text-center text-sm text-muted-foreground"
+                    >
+                      Carregando horários...
+                    </td>
+                  </tr>
+                )}
+
+                {!slotsLoading &&
+                  slots.map((s) => (
+                    <tr
+                      key={`${s.inicio}-${s.salaId ?? "x"}`}
+                      className={`border-t cursor-pointer transition-colors duration-150 ${
+                        slotSelecionado?.inicio === s.inicio &&
+                        slotSelecionado?.salaId === s.salaId
+                          ? "bg-primary/15 border-l-4 border-l-primary text-primary font-medium"
+                          : "hover:bg-accent/40"
+                      }`}
+                      onClick={() => {
+                        if (
                           slotSelecionado?.inicio === s.inicio &&
                           slotSelecionado?.salaId === s.salaId
+                        ) {
+                          onSlotSelecionado(null); // ✅ desmarca se clicar no mesmo
+                        } else {
+                          onSlotSelecionado(s); // marca normalmente
                         }
-                        onCheckedChange={() => onSlotSelecionado(s)}
-                      />
-                    </td>
-                    <td className="py-2 pr-2">{fmtHour(s.inicio)}</td>
-                    <td className="py-2 pr-2">{s.medicoNome ?? "-"}</td>
-                    <td className="py-2 pr-2">{s.salaNome ?? "-"}</td>
-                  </tr>
-                ))}
-                {slots.length === 0 && (
+                      }}
+                    >
+                      <td className="p-2">
+                        <Checkbox
+                          checked={
+                            slotSelecionado?.inicio === s.inicio &&
+                            slotSelecionado?.salaId === s.salaId
+                          }
+                          onCheckedChange={() => {
+                            if (
+                              slotSelecionado?.inicio === s.inicio &&
+                              slotSelecionado?.salaId === s.salaId
+                            ) {
+                              onSlotSelecionado(null); // ✅ desmarca ao clicar novamente
+                            } else {
+                              onSlotSelecionado(s);
+                            }
+                          }}
+                        />
+                      </td>
+
+                      <td className="py-2 pr-2">{fmtHour(s.inicio ?? "-")}</td>
+                      <td className="py-2 pr-2">{s.medicoNome ?? "-"}</td>
+                      <td className="py-2 pr-2">{s.salaNome ?? "-"}</td>
+                    </tr>
+                  ))}
+
+                {!slotsLoading && slots.length === 0 && (
                   <tr>
                     <td
                       colSpan={4}

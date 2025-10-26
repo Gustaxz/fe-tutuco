@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Dialog,
@@ -12,16 +11,22 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
-import type { AgendarPayload, Medico, Sala, Slot } from "./types";
-import { getMedicos, getSalas, getSlots, validar, agendar } from "./api";
+import StepOneProcedureSelector from "./StepOneProcedureSelector";
 import EmployeeAvailabilitySelector from "./EmployeeAvailabilitySelector";
 import EquipmentAvailabilitySelector from "./EquipmentAvailabilitySelector";
-import StepOneProcedureSelector from "./StepOneProcedureSelector";
+import type { Slot } from "./types";
+
+// adapter
+import {
+  listCentros,
+  listSalas,
+  listMedicos,
+  searchSlots,
+} from "../../api/scheduleAdapter";
+import SearchEmployeesModal from "./modal/SearchEmployeesModal";
 
 const addHours = (startIso: string, hours: number) =>
   new Date(new Date(startIso).getTime() + hours * 3600000).toISOString();
-const clamp = (v: number, min = 0, max = Number.MAX_SAFE_INTEGER) =>
-  Math.max(min, Math.min(max, v));
 
 export default function Scheduler({
   open,
@@ -32,86 +37,106 @@ export default function Scheduler({
 }) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
-  // Step 1 fields
-  const [pacienteId, setPacienteId] = useState<string>("");
-  const [procedimento, setProcedimento] = useState<string>("");
-  const [duracaoHoras, setDuracaoHoras] = useState<number>(1);
+  // Step 1
+  const [pacienteId, setPacienteId] = useState("12345678900");
+  const [procedimento, setProcedimento] = useState("Colecistectomia");
+  const [duracaoHoras, setDuracaoHoras] = useState(2);
+  const [data, setData] = useState(() => new Date().toISOString().slice(0, 10));
+
   const [centroId, setCentroId] = useState<number | undefined>();
   const [medicoRespId, setMedicoRespId] = useState<number | undefined>();
   const [salaId, setSalaId] = useState<number | undefined>();
-  const [data, setData] = useState<string>(() =>
-    new Date().toISOString().slice(0, 10)
-  );
+
+  const [centros, setCentros] = useState<{ id: number; nome: string }[]>([]);
+  const [salas, setSalas] = useState<{ id: number; nome: string }[]>([]);
+  const [medicos, setMedicos] = useState<{ id: number; nome: string }[]>([]);
 
   const [slots, setSlots] = useState<Slot[]>([]);
   const [slotSelecionado, setSlotSelecionado] = useState<Slot | null>(null);
+
+  // Step 2/3
+  const [funcionarios, setFuncionarios] = useState<any[]>([]);
+  const [recursos, setRecursos] = useState<any[]>([]);
+  const [itens, setItens] = useState<any[]>([]);
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  // janela baseada na data
   const janela = useMemo(() => {
     const start = new Date(`${data}T07:00:00`).toISOString();
     const end = new Date(`${data}T19:00:00`).toISOString();
     return { start, end };
   }, [data]);
 
+  // carregamentos
   useEffect(() => {
-    if (!centroId) return; // Centro é obrigatório para buscar
-    const duracaoMin = clamp(Math.round(duracaoHoras * 60), 30, 12 * 60);
-    getSlots({
-      start: janela.start,
-      end: janela.end,
-      duracaoMin,
-      salaId,
-      profissionalId: medicoRespId,
-      centroId,
-    })
-      .then(({ slots }) =>
-        setSlots(
-          [...slots].sort(
-            (a, b) =>
-              new Date(b.inicio).getTime() - new Date(a.inicio).getTime()
-          )
-        )
-      )
-      .catch(() => setSlots([]));
-  }, [centroId, medicoRespId, salaId, duracaoHoras, janela.start, janela.end]);
-
-  const [salas, setSalas] = useState<Sala[]>([]);
-  useEffect(() => {
-    if (centroId)
-      getSalas(centroId)
-        .then(setSalas)
-        .catch(() => setSalas([]));
-  }, [centroId]);
-
-  const [medicos, setMedicos] = useState<Medico[]>([]);
-  useEffect(() => {
-    getMedicos({})
+    listCentros()
+      .then(setCentros)
+      .catch(() => setCentros([]));
+    listMedicos()
       .then(setMedicos)
       .catch(() => setMedicos([]));
   }, []);
 
-  // Step 2/3 state
-  const [funcionarios, setFuncionarios] = useState<any[]>([]);
-  const [recursos, setRecursos] = useState<any[]>([]);
-  const [itens, setItens] = useState<any[]>([]);
+  useEffect(() => {
+    if (!centroId) {
+      setSalas([]);
+      setSalaId(undefined);
+      return;
+    }
+    listSalas(centroId)
+      .then((ss) => setSalas(ss.map((s) => ({ id: s.id, nome: s.nome }))))
+      .catch(() => setSalas([]));
+    setSalaId(undefined);
+  }, [centroId]);
+
+  // limpa slot ao mudar filtros
+  useEffect(() => {
+    setSlotSelecionado(null);
+  }, [data, centroId, salaId, medicoRespId]);
+
+  // consulta horários — envia só filtros definidos
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const handleConsultar = async () => {
+    if (typeof centroId !== "number") return;
+    setSlotsLoading(true);
+    try {
+      const params: any = {
+        date: data,
+        centroId,
+        ...(typeof salaId === "number" ? { salaId } : {}),
+        ...(typeof medicoRespId === "number"
+          ? { profissionalId: medicoRespId }
+          : {}),
+      };
+      const result = await searchSlots(params);
+      setSlots(result);
+    } catch {
+      setSlots([]);
+    } finally {
+      setSlotsLoading(false);
+    }
+  };
 
   const inicioSelecionado = slotSelecionado?.inicio ?? null;
   const fimSelecionado = inicioSelecionado
     ? addHours(inicioSelecionado, duracaoHoras)
     : null;
 
-  const podeAvancar1 = !!(
-    pacienteId &&
-    procedimento &&
-    duracaoHoras &&
-    centroId &&
-    slotSelecionado
-  );
+  const podeAvancar1 =
+    !!pacienteId &&
+    !!procedimento &&
+    !!duracaoHoras &&
+    !!centroId &&
+    !!slotSelecionado;
+
   const podeAgendar = !!podeAvancar1;
 
   const resetAll = () => {
     setStep(1);
-    setPacienteId("");
-    setProcedimento("");
-    setDuracaoHoras(1);
+    setPacienteId("12345678900");
+    setProcedimento("Colecistectomia");
+    setDuracaoHoras(2);
+    setData(new Date().toISOString().slice(0, 10));
     setCentroId(undefined);
     setMedicoRespId(undefined);
     setSalaId(undefined);
@@ -126,54 +151,29 @@ export default function Scheduler({
     onClose();
   };
 
-  const payload: AgendarPayload = {
-    pacienteId: pacienteId ? Number(pacienteId) : null,
-    responsavelProfissionalId: medicoRespId ?? null,
-    procedimentoNome: procedimento,
-    salaId: salaId ?? slotSelecionado?.salaId ?? null,
-    inicio: inicioSelecionado,
-    fim: fimSelecionado,
-    profissionaisIds: [medicoRespId, ...funcionarios.map((f) => f.id)].filter(
-      Boolean
-    ) as number[],
-    recursosIds: recursos.map((r) => r.id),
-    itens: itens.map((i) => ({
-      itemTipoId: i.itemTipoId,
-      quantidade: i.quantidade,
-    })),
-  };
-
-  const handleValidar = async () => {
+  const handleValidar = () => {
     if (!podeAgendar) return;
-    const res = await validar(payload);
-    if (!res.ok) {
-      alert("Conflitos detectados. Veja console.");
-      console.log("Conflitos:", res.conflitos, "Sugestões:", res.sugestoes);
-      return;
-    }
     setStep(3);
   };
-
-  const handleAgendar = async () => {
+  const handleAgendar = () => {
     if (!podeAgendar) return;
-    const { procedimentoId } = await agendar(payload);
-    alert(`Procedimento agendado! #${procedimentoId}`);
+    alert("(mock) Procedimento agendado!");
     onCloseInternal();
   };
 
   return (
     <Dialog open={open} onOpenChange={(o) => (!o ? onCloseInternal() : null)}>
-      <DialogContent className="w-[90vw max-h-[90vh] overflow-y-auto rounded-2xl p-0">
+      <DialogContent className="w-[90vw] max-w-6xl max-h-[90vh] overflow-y-auto rounded-2xl p-0">
         <div className="p-6 border-b">
           <DialogHeader>
             <DialogTitle>Cadastro de Cirurgia</DialogTitle>
             <DialogDescription>
-              Preencha as 3 etapas para agendar o procedimento.
+              Preencha as 3 etapas para agendar o procedimento (mock).
             </DialogDescription>
           </DialogHeader>
         </div>
 
-        {/* Stepper */}
+        {/* stepper */}
         <div className="px-6 pt-4">
           <div className="flex items-center gap-3">
             {[1, 2, 3].map((s) => (
@@ -195,6 +195,7 @@ export default function Scheduler({
           </div>
         </div>
 
+        {/* conteúdo */}
         <div className="p-6">
           {step === 1 && (
             <motion.div
@@ -222,6 +223,9 @@ export default function Scheduler({
                 slots={slots}
                 slotSelecionado={slotSelecionado}
                 onSlotSelecionado={setSlotSelecionado}
+                onConsultar={handleConsultar}
+                slotsLoading={slotsLoading}
+                centros={centros}
               />
               <div className="flex justify-end gap-2">
                 <Button variant="secondary" onClick={onCloseInternal}>
@@ -252,6 +256,25 @@ export default function Scheduler({
                   onChange={setFuncionarios}
                 />
               </Card>
+
+              {/* modal de busca por cima */}
+              <SearchEmployeesModal
+                open={searchOpen}
+                onClose={() => setSearchOpen(false)}
+                janela={{
+                  inicio: inicioSelecionado ?? new Date().toISOString(),
+                  fim:
+                    fimSelecionado ??
+                    addHours(new Date().toISOString(), duracaoHoras),
+                }}
+                onSelect={(novos) => {
+                  setFuncionarios((prev) => {
+                    const ids = new Set(prev.map((p: any) => p.id));
+                    return [...prev, ...novos.filter((n) => !ids.has(n.id))];
+                  });
+                }}
+              />
+
               <div className="flex justify-between">
                 <Button variant="secondary" onClick={() => setStep(1)}>
                   Voltar
