@@ -42,8 +42,17 @@ interface ApiOcupation {
   id_surgical_center: string
   id_room: string
   createdAt: string
+  ocupations_check: string[]
+  patient: ApiPatient
   updatedAt: string
   deletedAt: string | null
+}
+
+interface ApiPatient {
+  id: string
+  name: string
+  createdAt: string
+  updatedAt: string
 }
 
 interface ApiScheduleSurgery {
@@ -160,7 +169,7 @@ export const ScheduleApiService = {
           name: member.name,
           roles: member.role,
           type: member.type,
-          available: Math.random() > 0.2, // Mock: 80% chance of being available
+          available: surgery.ocupation.ocupations_check.includes(member.id), // Mock: 80% chance of being available
         }))
 
         // Mock status based on current time comparison (will be from API later)
@@ -182,7 +191,7 @@ export const ScheduleApiService = {
             start: startTime,
             end: endTime,
             doctorName,
-            patientName: 'Paciente', // Not provided by API, placeholder
+            patientName: surgery.ocupation.patient.name, // Not provided by API, placeholder
             surgeryType: 'Cirurgia Geral', // Not provided by API, placeholder
             urgency,
             status,
