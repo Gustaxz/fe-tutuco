@@ -302,7 +302,7 @@ export function CalendarScreen({ setShowCalendar, showCalendar }: CalendarScreen
                     <div className="grid" style={{ gridTemplateColumns: `120px 1fr` }}>
                         <div className="p-3 text-gray-600">Horários</div>
                         <div className="overflow-x-auto">
-                            <div className="min-w-max">
+                            <div className="">
                                 <div className="grid border-b border-gray-300" style={{ gridTemplateColumns: `repeat(${visibleRooms.length}, minmax(180px, 1fr))` }}>
                                     {visibleRooms.map(room => {
                                         const style = centerIdToStyle.get(room.centerId)
