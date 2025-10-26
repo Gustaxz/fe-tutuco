@@ -339,6 +339,7 @@
 .ala-medicos h4 {
   margin-bottom: 0.75rem;
   color: var(--primary);
+  font-size: 0.9rem;
 }
 
 .medicos-list {
