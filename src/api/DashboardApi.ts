@@ -60,22 +60,22 @@ export const DashboardApiService = {
       }))
     } catch (error) {
       console.error('Error fetching professionals:', error)
-      // Return mock data with all enum roles mapped
+      // Return mock data with enum roles
       return [
-        { id: '1', name: 'Dr. Silva', role: ['Cirurgião'], status: 'disponivel', sala: 'C01' },
-        { id: '2', name: 'Dr. Costa', role: ['Cirurgião auxiliar'], status: 'cirurgia', sala: 'C02' },
-        { id: '3', name: 'Dr. Santos', role: ['Anestesiologista'], status: 'disponivel', sala: 'C03' },
-        { id: '4', name: 'Dr. Lima', role: ['Médico residente'], status: 'consulta' },
-        { id: '5', name: 'Enf. Ana', role: ['Enfermeiro instrumentador'], status: 'cirurgia', sala: 'C01' },
-        { id: '6', name: 'Enf. João', role: ['Enfermeiro circulante'], status: 'disponivel', sala: 'C02' },
-        { id: '7', name: 'Enf. Maria', role: ['Enfermeiro de recuperação'], status: 'disponivel' },
-        { id: '8', name: 'Tec. Pedro', role: ['Técnico cirúrgico'], status: 'disponivel', sala: 'C03' },
-        { id: '9', name: 'Tec. Carla', role: ['Técnico em radiologia'], status: 'consulta' },
-        { id: '10', name: 'José Perfusão', role: ['Perfusionista'], status: 'disponivel' },
-        { id: '11', name: 'Tec. Bruno', role: ['Técnico em esterilização'], status: 'disponivel' },
-        { id: '12', name: 'Coord. Laura', role: ['Coordenador de sala cirúrgica'], status: 'disponivel' },
-        { id: '13', name: 'Agenda. Paulo', role: ['Agendador cirúrgico'], status: 'disponivel' },
-        { id: '14', name: 'Aux. Rita', role: ['Auxiliar de estoque'], status: 'disponivel' }
+        { id: '1', name: 'Dr. Silva', role: ['SURGEON'], status: 'disponivel', sala: 'C01' },
+        { id: '2', name: 'Dr. Costa', role: ['ASSISTANT_SURGEON'], status: 'cirurgia', sala: 'C02' },
+        { id: '3', name: 'Dr. Santos', role: ['ANESTHESIOLOGIST'], status: 'disponivel', sala: 'C03' },
+        { id: '4', name: 'Dr. Lima', role: ['RESIDENT_DOCTOR'], status: 'consulta' },
+        { id: '5', name: 'Enf. Ana', role: ['SCRUB_NURSE'], status: 'cirurgia', sala: 'C01' },
+        { id: '6', name: 'Enf. João', role: ['CIRCULATING_NURSE'], status: 'disponivel', sala: 'C02' },
+        { id: '7', name: 'Enf. Maria', role: ['RECOVERY_NURSE'], status: 'disponivel' },
+        { id: '8', name: 'Tec. Pedro', role: ['SURGICAL_TECHNICIAN'], status: 'disponivel', sala: 'C03' },
+        { id: '9', name: 'Tec. Carla', role: ['RADIOLOGY_TECHNICIAN'], status: 'consulta' },
+        { id: '10', name: 'José Perfusão', role: ['PERFUSIONIST'], status: 'disponivel' },
+        { id: '11', name: 'Tec. Bruno', role: ['STERILIZATION_TECH'], status: 'disponivel' },
+        { id: '12', name: 'Coord. Laura', role: ['OPERATING_ROOM_COORDINATOR'], status: 'disponivel' },
+        { id: '13', name: 'Agenda. Paulo', role: ['SURGICAL_SCHEDULER'], status: 'disponivel' },
+        { id: '14', name: 'Aux. Rita', role: ['INVENTORY_CLERK'], status: 'disponivel' }
       ]
     }
   },
