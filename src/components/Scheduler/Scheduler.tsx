@@ -57,11 +57,11 @@ export default function Scheduler({
   const [searchOpen, setSearchOpen] = useState(false);
 
   // janela baseada na data
-  const janela = useMemo(() => {
-    const start = new Date(`${data}T07:00:00`).toISOString();
-    const end = new Date(`${data}T19:00:00`).toISOString();
-    return { start, end };
-  }, [data]);
+  // const janela = useMemo(() => {
+  //   const start = new Date(`${data}T07:00:00`).toISOString();
+  //   const end = new Date(`${data}T19:00:00`).toISOString();
+  //   return { start, end };
+  // }, [data]);
 
   // carregamentos
   useEffect(() => {
@@ -203,7 +203,7 @@ export default function Scheduler({
         id_patient: pacienteId, // aqui está o cpf; se precisar de uuid real, ajustar quando disponível
       } as const
 
-      const result = await ScheduleApiService.createScheduleSurgery(payload as any)
+      await ScheduleApiService.createScheduleSurgery(payload as any)
       onCloseInternal()
     } catch (e) {
       alert('Falha ao agendar cirurgia. Tente novamente.')

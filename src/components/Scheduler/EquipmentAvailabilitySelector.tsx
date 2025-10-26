@@ -35,11 +35,11 @@ export default function EquipmentAvailabilitySelector({
   itens,
   onChangeItens,
 }: EquipmentAvailabilitySelectorProps) {
-  const [openRec, setOpenRec] = useState(false);
+  // const [openRec, setOpenRec] = useState(false);
   const [openDesc, setOpenDesc] = useState(false);
 
-  const removerRecurso = (id: number) =>
-    onChangeRecursos(recursos.filter((x) => x.id !== id));
+  // const removerRecurso = (id: number) =>
+  //   onChangeRecursos(recursos.filter((x) => x.id !== id));
 
   const removerItem = (id: number) =>
     onChangeItens(itens.filter((x) => x.itemTipoId !== id));

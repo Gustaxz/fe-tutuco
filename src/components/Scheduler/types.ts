@@ -35,6 +35,7 @@ export interface Recurso {
   disponivel: boolean;
   motivo?: string;
   grupoId?: number;
+  backendId?: string;
 
   // campos opcionais usados quando for um recurso descartável
   disposable?: boolean; // true → recurso descartável

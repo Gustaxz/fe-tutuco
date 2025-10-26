@@ -16,7 +16,7 @@ export class FuncionarioService {
 
     const funcionarios: Funcionario[] = [
       {
-        id: 1,
+        id: '1',
         nome: "Dr. Marcos Mignoni",
         interno: true,
         disponivel: true,
@@ -26,7 +26,7 @@ export class FuncionarioService {
         ],
       },
       {
-        id: 2,
+        id: '2',
         nome: "Dra. Fernanda Lopes",
         interno: true,
         disponivel: false,
@@ -34,7 +34,7 @@ export class FuncionarioService {
         especialidades: [{ id: 2, nome: "Cardiologia" }],
       },
       {
-        id: 3,
+        id: '3',
         nome: "Dr. Pedro Maia",
         interno: false,
         disponivel: true,
@@ -44,14 +44,14 @@ export class FuncionarioService {
         ],
       },
       {
-        id: 4,
+        id: '4',
         nome: "Dra. Julia Ribeiro",
         interno: false,
         disponivel: true,
         especialidades: [{ id: 3, nome: "Ortopedia" }],
       },
       {
-        id: 5,
+        id: '5',
         nome: "Dr. Rafael Costa",
         interno: true,
         disponivel: false,

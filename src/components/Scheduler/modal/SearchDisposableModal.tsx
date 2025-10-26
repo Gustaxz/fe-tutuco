@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   Dialog,
@@ -16,16 +16,16 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Filter, Loader2, RotateCcw } from "lucide-react";
-import { RecursoService } from "@/api/RecursoService ";
+// import { RecursoService } from "@/api/RecursoService ";
 import { ScheduleApiService } from "@/api/ScheduleApi";
 import type { Recurso } from "../types";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
+// import {
+//   Select,
+//   SelectTrigger,
+//   SelectValue,
+//   SelectContent,
+//   SelectItem,
+// } from "@/components/ui/select";
 
 type Props = {
   open: boolean;
