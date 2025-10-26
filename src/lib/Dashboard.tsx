@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import './Dashboard.css';
 import { CalendarScreen } from '../components/CalendarScreen/CalendarScreen';
 import { DashboardApiService, type Professional } from '../api/DashboardApi';
+import { ScheduleApiService, type Booking } from '../api/ScheduleApi';
 import { RoleProfessions } from '../utils/dashboardUtils';
 
 interface Medico {
@@ -18,7 +19,7 @@ const Dashboard = () => {
   const [currentDateTime, setCurrentDateTime] = useState('');
   const [showCalendar, setShowCalendar] = useState(false);
   const [dashboardData, setDashboardData] = useState({
-    cirurgias: [],
+    cirurgias: [] as Booking[],
     alertas: [
       { tipo: 'warning', titulo: 'Cirurgia Atrasada', descricao: 'Atraso de 10 min - Sala C01 - Dr. Silva' },
       { tipo: 'info', titulo: 'Sala em Higienização', descricao: 'Sala O03 - Finaliza em 15 min' },
@@ -56,17 +57,21 @@ const Dashboard = () => {
   }, []);
 
   useEffect(() => {
-    const loadProfissionais = async () => {
+    const loadData = async () => {
       const profissionais = await DashboardApiService.getProfessionals();
-      console.log(profissionais);
+      
+      // Get today's date in YYYY-MM-DD format
+      const today = new Date().toISOString().split('T')[0];
+      const cirurgias = await ScheduleApiService.getBookingsByDate(today);
       
       setDashboardData(prev => ({
         ...prev,
-        profissionais
+        profissionais,
+        cirurgias
       }));
     };
 
-    loadProfissionais();
+    loadData();
   }, []);
 
   const atualizarMetricas = () => {
@@ -87,6 +92,17 @@ const Dashboard = () => {
   };
 
   const { total: totalDisponiveis, disponiveis: medicosDisponiveis } = getMedicosDisponiveis();
+
+  const getSalasLivres = () => {
+    // Contando salas disponíveis das alas
+    const cardio = 1; // C02 available
+    const neuro = 2; // N01, N03 available  
+    const ortho = 0; // nenhuma available
+    const emergency = 3; // E01, E02, E03 available
+    return cardio + neuro + ortho + emergency;
+  };
+
+  const salasLivres = getSalasLivres();
 
   const alaNames: Record<string, string> = {
     cardiologia: 'Cardiologia',
@@ -136,7 +152,7 @@ const Dashboard = () => {
                   <i className="fas fa-calendar-check"></i>
                 </div>
                 <div className="stat-info">
-                  <h3>0</h3>
+                  <h3>{dashboardData.cirurgias.length}</h3>
                   <p>Cirurgias Hoje</p>
                 </div>
               </div>
@@ -156,7 +172,7 @@ const Dashboard = () => {
                   <i className="fas fa-door-open"></i>
                 </div>
                 <div className="stat-info">
-                  <h3>8</h3>
+                  <h3>{salasLivres}</h3>
                   <p>Salas Livres</p>
                 </div>
               </div>
@@ -187,17 +203,31 @@ const Dashboard = () => {
                   </div>
                 </div>
                 <div className="timeline">
-                  <div style={{ padding: '2rem', textAlign: 'center' }}>
-                    <div style={{ fontSize: '3rem', color: '#e0e0e0', marginBottom: '1rem' }}>
-                      <i className="fas fa-calendar-day"></i>
+                  {dashboardData.cirurgias.length > 0 ? (
+                    dashboardData.cirurgias.map((cirurgia, index) => (
+                      <div key={index} className="timeline-item">
+                        <div>
+                          <strong>{cirurgia.start} - {cirurgia.end}</strong>
+                          <h4 style={{ margin: '0.5rem 0', color: 'var(--primary)' }}>{cirurgia.title}</h4>
+                          <p style={{ margin: '0.25rem 0', color: '#666' }}>Dr. {cirurgia.doctorName}</p>
+                          <p style={{ margin: '0.25rem 0', color: '#666' }}>Sala: {cirurgia.roomId}</p>
+                          <span className={`status-badge ${cirurgia.urgency}`}>{cirurgia.urgency}</span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div style={{ padding: '2rem', textAlign: 'center' }}>
+                      <div style={{ fontSize: '3rem', color: '#e0e0e0', marginBottom: '1rem' }}>
+                        <i className="fas fa-calendar-day"></i>
+                      </div>
+                      <p style={{ color: '#666', fontSize: '1.1rem', marginBottom: '0.5rem' }}>
+                        Nenhuma cirurgia agendada para hoje
+                      </p>
+                      <p style={{ color: '#999', fontSize: '0.9rem' }}>
+                        Clique em "Nova" para agendar uma cirurgia
+                      </p>
                     </div>
-                    <p style={{ color: '#666', fontSize: '1.1rem', marginBottom: '0.5rem' }}>
-                      Nenhuma cirurgia agendada para hoje
-                    </p>
-                    <p style={{ color: '#999', fontSize: '0.9rem' }}>
-                      Clique em "Nova" para agendar uma cirurgia
-                    </p>
-                  </div>
+                  )}
                 </div>
               </div>
 
@@ -284,11 +314,18 @@ const Dashboard = () => {
                   <h2><i className="fas fa-users"></i> Profissionais</h2>
                 </div>
                 <div className="medicos-alas">
-                  {dashboardData.profissionais.map((item) => (
-                    <div key={item.id} className="ala-medicos">
-                      <h4>{item.role.map(role => RoleProfessions[role]).join(', ')}</h4>
+                  {Object.entries(
+                    dashboardData.profissionais.reduce((acc, prof) => {
+                      const funcao = RoleProfessions[prof.role[0]] || prof.role[0] || 'Outros';
+                      if (!acc[funcao]) acc[funcao] = [];
+                      acc[funcao].push(prof);
+                      return acc;
+                    }, {} as Record<string, Professional[]>)
+                  ).map(([funcao, profissionais]) => (
+                    <div key={funcao} className="ala-medicos">
+                      <h4>{funcao}</h4>
                       <div className="medicos-list">
-                        {dashboardData.profissionais.map((profissional: Professional, index: number) => {
+                        {profissionais.map((profissional: Professional, index: number) => {
                           const statusIcon: Record<string, string> = {
                             'disponivel': 'fas fa-circle text-success',
                             'cirurgia': 'fas fa-circle text-danger',
@@ -321,22 +358,18 @@ const Dashboard = () => {
                   <div className="metric-item">
                     <div className="metric-value">{metricas.taxaOcupacao}%</div>
                     <div className="metric-label">Taxa de Ocupação</div>
-                    <div className="metric-trend positive">+5%</div>
                   </div>
                   <div className="metric-item">
                     <div className="metric-value">{metricas.tempoMedioEspera}min</div>
                     <div className="metric-label">Tempo Médio Espera</div>
-                    <div className="metric-trend negative">-3min</div>
                   </div>
                   <div className="metric-item">
                     <div className="metric-value">{metricas.equipamentosBons}%</div>
                     <div className="metric-label">Equipamentos Bons</div>
-                    <div className="metric-trend positive">+3%</div>
                   </div>
                   <div className="metric-item">
                     <div className="metric-value">{metricas.eficienciaOperacional}%</div>
                     <div className="metric-label">Eficiência Operacional</div>
-                    <div className="metric-trend positive">+2%</div>
                   </div>
                 </div>
               </div>
