@@ -214,6 +214,7 @@ const Dashboard = () => {
                         <div>
                           <strong>{cirurgia.start}</strong>
                           <h4 style={{ margin: '0.25rem 0', color: 'var(--primary)' }}>{cirurgia.title}</h4>
+                          <p style={{ margin: '0.25rem 0', color: '#666', fontSize: '0.9rem' }}>Paciente: {cirurgia.patientName}</p>
                           <span className={`status-badge ${cirurgia.urgency}`} style={{ 
                             padding: '0.25rem 0.5rem', 
                             borderRadius: '0.25rem', 
