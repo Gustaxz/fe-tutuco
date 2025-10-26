@@ -2,7 +2,7 @@ import axios from 'axios'
 import type { Booking, TeamMember, SurgeryStatus } from './ScheduleMock'
 
 const API_BASE_URL = 'https://project.freshroots.com.br'
-const HOSPITAL_ID = ''
+const HOSPITAL_ID = '10e960a9-4acd-4daf-b188-7b94b6ecf74b'
 
 // API Response Types
 interface ApiRoom {
@@ -183,6 +183,7 @@ export const ScheduleApiService = {
       return []
     }
   },
+  
 
   async getEquipment(params?: { type?: 'OWNED' | 'THIRD_PARTY' }): Promise<Array<{
     id: string
@@ -212,9 +213,7 @@ export const ScheduleApiService = {
   async getBookingsByDate(date: string, centerId?: string, roomIds?: string[]): Promise<Booking[]> {
     try {
       const response = await api.get<ApiScheduleSurgery[]>('/schedule-surgery', {
-        params: {
-          hospital_id: HOSPITAL_ID,
-        },
+        
       })
       // Transform API response to Booking format
       let bookings = response.data.map(surgery => {
@@ -363,6 +362,31 @@ export const ScheduleApiService = {
       return response.data
     } catch (error) {
       console.error('Error fetching availability:', error)
+      throw error
+    }
+  },
+
+  async createScheduleSurgery(payload: {
+    id_ocupation: string | null
+    id_room: string
+    id_hospital: string
+    date_start: string
+    date_end: string
+    time_additional: number
+    teamIds: string[]
+    equipmentIds: string[]
+    id_patient: string
+  }): Promise<{ id: string }> {
+    try {
+      const response = await api.post('/schedule-surgery', {
+        ...payload,
+        id_patient: undefined,
+        cpf_patient: payload.id_patient,
+        id_hospital: HOSPITAL_ID,
+      })
+      return response.data
+    } catch (error) {
+      console.error('Error creating schedule surgery:', error)
       throw error
     }
   },

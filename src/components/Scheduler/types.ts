@@ -15,8 +15,9 @@ export type Slot = {
 };
 
 export interface Funcionario {
-  id: number;
+  id: string;
   nome: string;
+  index?: number;
   interno: boolean;
   disponivel: boolean;
   motivo?: string;

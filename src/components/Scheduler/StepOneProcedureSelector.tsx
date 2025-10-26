@@ -69,6 +69,18 @@ export default function StepOneProcedureSelector({
   slotsLoading,
   centros,
 }: StepOneProcedureSelectorProps) {
+  function toBrazilYMD(inputYMD: string): string {
+    if (!inputYMD) return inputYMD
+    // Normalize the selected date to Brazil timezone and return YYYY-MM-DD
+    const dt = new Date(`${inputYMD}T00:00:00`)
+    const fmt = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Sao_Paulo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    })
+    return fmt.format(dt)
+  }
   return (
     <Card className="w-full">
       <CardHeader>
@@ -104,7 +116,7 @@ export default function StepOneProcedureSelector({
                 className="w-full h-12 text-base rounded-lg"
                 type="date"
                 value={data}
-                onChange={(e) => onData(e.target.value)}
+                onChange={(e) => onData(toBrazilYMD(e.target.value))}
               />
             </div>
             <div className="col-span-12 md:col-span-3">

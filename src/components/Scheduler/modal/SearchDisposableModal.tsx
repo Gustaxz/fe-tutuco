@@ -37,6 +37,7 @@ type Props = {
       unidade: string;
       quantidade: number;
       disponivel: number;
+      backendId?: string;
     }[]
   ) => void;
   janela: { inicio: string; fim: string };
@@ -94,6 +95,7 @@ export default function SearchDisposableModal({
         disponivel: true,
         grupoId: undefined,
         estoque: 1,
+        backendId: e.id,
       }))
 
       setResultado(lista)
@@ -116,6 +118,7 @@ export default function SearchDisposableModal({
         unidade: r.unidade ?? "un",
         quantidade: 1, // 👈 sempre 1 por padrão
         disponivel: r.estoque ?? 0,
+        backendId: r.backendId,
       }));
 
     onSelect(selecionadosList);

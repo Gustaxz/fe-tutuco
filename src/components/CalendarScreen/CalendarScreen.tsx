@@ -62,6 +62,8 @@ export function CalendarScreen({ setShowCalendar, showCalendar }: CalendarScreen
 
     const [selectedCenterIds, setSelectedCenterIds] = useState<string[]>([])
     const [selectedRoomIds, setSelectedRoomIds] = useState<string[]>([])
+    const [selectedProfessionalIds, setSelectedProfessionalIds] = useState<string[]>([])
+    const [professionals, setProfessionals] = useState<Array<{ id: string; name: string }>>([])
     const [selectedDate, setSelectedDate] = useState<string>(getTodayIsoDate())
 
     const [bookings, setBookings] = useState<Booking[]>([])
@@ -84,13 +86,15 @@ export function CalendarScreen({ setShowCalendar, showCalendar }: CalendarScreen
         let mounted = true
             ; (async () => {
                 try {
-                    const [fetchedCenters, fetchedRooms] = await Promise.all([
+                    const [fetchedCenters, fetchedRooms, fetchedPros] = await Promise.all([
                         ScheduleApiService.getSurgeryCenters(),
                         ScheduleApiService.getRooms(),
+                        ScheduleApiService.getProfessionals({ available: false })
                     ])
                     if (!mounted) return
                     setCenters(fetchedCenters)
                     setAllRooms(fetchedRooms)
+                    setProfessionals(fetchedPros.map(p => ({ id: p.id, name: p.name })))
                 } catch (error) {
                     console.error('Error loading data:', error)
                     // Could show an error message to the user here
@@ -122,6 +126,10 @@ export function CalendarScreen({ setShowCalendar, showCalendar }: CalendarScreen
         centers.forEach(c => m.set(c.id, c.name))
         return m
     }, [centers])
+
+    const professionalOptions: MultiSelectOption[] = useMemo(() => {
+        return professionals.map(p => ({ value: p.id, label: p.name }))
+    }, [professionals])
 
     const centerIdToStyle = useMemo(() => {
         const defaultStyle: CenterStyle = {
@@ -254,6 +262,18 @@ export function CalendarScreen({ setShowCalendar, showCalendar }: CalendarScreen
                                 />
                             </div>
                         </div>
+
+                        <div className="min-w-80 w-md">
+                            <span className="text-sm text-gray-600">Profissionais</span>
+                            <div className="mt-2">
+                                <MultiSelect
+                                    placeholder="Selecione profissionais..."
+                                    options={professionalOptions}
+                                    values={selectedProfessionalIds}
+                                    onChange={setSelectedProfessionalIds}
+                                />
+                            </div>
+                        </div>
                     </div>
 
                     <div className="flex gap-2 mb-2">
@@ -331,7 +351,11 @@ export function CalendarScreen({ setShowCalendar, showCalendar }: CalendarScreen
 
                                     <div className="absolute inset-0" style={{ display: 'grid', gridTemplateColumns: `repeat(${visibleRooms.length}, minmax(180px, 1fr))` }}>
                                         {visibleRooms.map(room => {
-                                            const roomBookings = bookings.filter(b => b.roomId === room.id)
+                                            const roomBookings = bookings
+                                                .filter(b => b.roomId === room.id)
+                                                .filter(b => selectedProfessionalIds.length === 0
+                                                    ? true
+                                                    : (b.team ?? []).some(m => selectedProfessionalIds.includes(m.id)))
                                             return (
                                                 <div key={room.id} className="relative border-r border-gray-300 last:border-r-0">
                                                     {roomBookings.map(b => {

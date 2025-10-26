@@ -52,7 +52,7 @@ export default function SearchEmployeesModal({
   const [nome, setNome] = useState("");
   const [loading, setLoading] = useState(false);
   const [resultado, setResultado] = useState<Funcionario[]>([]);
-  const [selecionados, setSelecionados] = useState<Record<number, boolean>>({});
+  const [selecionados, setSelecionados] = useState<Record<string, boolean>>({});
   const [buscouAoMenosUmaVez, setBuscouAoMenosUmaVez] = useState(false);
 
   const limpar = () => {
@@ -83,10 +83,14 @@ export default function SearchEmployeesModal({
         type,
       })
 
+      console.log({ pros });
+      
+
       // Adapt professionals to Funcionario shape used by this modal
       const lista: Funcionario[] = pros.map((p, idx) => ({
-        id: idx + 1, // local id for selection purposes
+        id: p.id, // local id for selection purposes
         nome: p.name,
+        index: idx,
         interno: (p.type ?? 'OWNED') === 'OWNED',
         disponivel: true,
         especialidades: [],
@@ -95,8 +99,8 @@ export default function SearchEmployeesModal({
       lista.sort((a, b) => a.nome.localeCompare(b.nome))
       setResultado(lista)
       setSelecionados((prev) => {
-        const next: Record<number, boolean> = {}
-        for (const f of lista) next[f.id] = !!prev[f.id]
+        const next: Record<string, boolean> = {}
+        for (const f of lista) next[f.index ?? 0] = !!prev[f.index ?? 0]
         return next
       })
     } finally {
@@ -105,7 +109,7 @@ export default function SearchEmployeesModal({
   };
 
   const confirmar = () => {
-    const picked = resultado.filter((f) => selecionados[f.id]);
+    const picked = resultado.filter((f) => selecionados[f.index ?? 0]);
     onSelect(picked);
     fechar();
   };
@@ -277,9 +281,9 @@ export default function SearchEmployeesModal({
                           <td className="p-3">
                             <Checkbox
                               disabled={!habilitado}
-                              checked={!!selecionados[f.id]}
+                              checked={!!selecionados[f.index ?? '']}
                               onCheckedChange={(v) =>
-                                setSelecionados((s) => ({ ...s, [f.id]: !!v }))
+                                setSelecionados((s) => ({ ...s, [f.index ?? '']: !!v }))
                               }
                             />
                           </td>

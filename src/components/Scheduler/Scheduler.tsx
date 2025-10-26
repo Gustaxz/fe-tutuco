@@ -34,9 +34,9 @@ export default function Scheduler({
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
   // Step 1
-  const [pacienteId, setPacienteId] = useState("12345678900");
-  const [procedimento, setProcedimento] = useState("Colecistectomia");
-  const [duracaoHoras, setDuracaoHoras] = useState(2);
+  const [pacienteId, setPacienteId] = useState("");
+  const [procedimento, setProcedimento] = useState("");
+  const [duracaoHoras, setDuracaoHoras] = useState(0);
   const [data, setData] = useState(() => new Date().toISOString().slice(0, 10));
 
   const [centroId, setCentroId] = useState<string | undefined>();
@@ -163,9 +163,9 @@ export default function Scheduler({
 
   const resetAll = () => {
     setStep(1);
-    setPacienteId("12345678900");
-    setProcedimento("Colecistectomia");
-    setDuracaoHoras(2);
+    setPacienteId("");
+    setProcedimento("");
+    setDuracaoHoras(0);
     setData(new Date().toISOString().slice(0, 10));
     setCentroId(undefined);
     setMedicoRespId(undefined);
@@ -185,10 +185,31 @@ export default function Scheduler({
     if (!podeAgendar) return;
     setStep(3);
   };
-  const handleAgendar = () => {
-    if (!podeAgendar) return;
-    alert("(mock) Procedimento agendado!");
-    onCloseInternal();
+  const handleAgendar = async () => {
+    if (!podeAgendar || !slotSelecionado || !centroId) return;
+    try {
+      const payload = {
+        id_ocupation: null, // não definido no fluxo atual
+        id_room: salaId ?? slotSelecionado.salaId ?? '',
+        id_hospital: '', // se houver um hospital fixo/config, preencher aqui
+        date_start: slotSelecionado.inicio,
+        date_end: fimSelecionado ?? addHours(slotSelecionado.inicio, duracaoHoras),
+        time_additional: 30,
+        teamIds: [
+          ...(medicoRespId ? [medicoRespId] : []),
+          ...funcionarios.map((f: any) => String(f.backendId ?? f.id)),
+        ],
+        equipmentIds: itens.map((i: any) => String(i.backendId ?? i.itemTipoId)),
+        id_patient: pacienteId, // aqui está o cpf; se precisar de uuid real, ajustar quando disponível
+      } as const
+
+      const result = await ScheduleApiService.createScheduleSurgery(payload as any)
+      alert(`Cirurgia agendada! ID: ${result?.id ?? '—'}`)
+      onCloseInternal()
+    } catch (e) {
+      alert('Falha ao agendar cirurgia. Tente novamente.')
+      console.error(e)
+    }
   };
 
   return (

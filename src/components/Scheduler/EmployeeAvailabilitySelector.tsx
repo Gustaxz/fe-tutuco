@@ -18,11 +18,13 @@ export default function EmployeeAvailabilitySelector({
 }: EmployeeAvailabilitySelectorProps) {
   const [open, setOpen] = useState(false);
 
-  const remover = (id: number) => onChange(value.filter((v) => v.id !== id));
+  const remover = (index: number) => onChange(value.filter((v) => v.index !== index));
 
   const handleSelect = (picked: Funcionario[]) => {
     const ids = new Set(value.map((v) => v.id));
     const merged = [...value, ...picked.filter((p) => !ids.has(p.id))];
+    console.log({ merged });
+    
     onChange(merged);
     setOpen(false);
   };
@@ -71,7 +73,7 @@ export default function EmployeeAvailabilitySelector({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => remover(f.id)}
+                    onClick={() => remover(f.index ?? 0)}
                   >
                     Remover
                   </Button>
