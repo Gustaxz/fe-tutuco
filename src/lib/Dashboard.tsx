@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import './Dashboard.css';
 import { CalendarScreen } from '../components/CalendarScreen/CalendarScreen';
+import { DashboardApiService, type Professional } from '../api/DashboardApi';
+import { RoleProfessions } from '../utils/dashboardUtils';
 
 interface Medico {
   nome: string;
@@ -15,7 +17,7 @@ interface MedicoComAla extends Medico {
 const Dashboard = () => {
   const [currentDateTime, setCurrentDateTime] = useState('');
   const [showCalendar, setShowCalendar] = useState(false);
-  const [dashboardData] = useState({
+  const [dashboardData, setDashboardData] = useState({
     cirurgias: [],
     alertas: [
       { tipo: 'warning', titulo: 'Cirurgia Atrasada', descricao: 'Atraso de 10 min - Sala C01 - Dr. Silva' },
@@ -23,27 +25,9 @@ const Dashboard = () => {
       { tipo: 'success', titulo: 'Sala Disponível', descricao: 'Sala N01 acabou de ficar disponível' },
       { tipo: 'warning', titulo: 'Equipamento em Manutenção', descricao: 'Monitor cardíaco - Sala C02' }
     ],
-    medicosAlas: {
-      cardiologia: [
-        { nome: 'Dr. Silva', status: 'cirurgia', sala: 'C01' },
-        { nome: 'Dra. Cardoso', status: 'disponivel' },
-        { nome: 'Dr. Coração', status: 'consulta' }
-      ],
-      neurologia: [
-        { nome: 'Dra. Lima', status: 'disponivel' },
-        { nome: 'Dr. Neuro', status: 'cirurgia', sala: 'N02' }
-      ],
-      ortopedia: [
-        { nome: 'Dra. Santos', status: 'cirurgia', sala: 'O01' },
-        { nome: 'Dr. Ossos', status: 'cirurgia', sala: 'O02' },
-        { nome: 'Dra. Ortho', status: 'disponivel' }
-      ],
-      emergencia: [
-        { nome: 'Dr. Urgente', status: 'disponivel' },
-        { nome: 'Dra. Pronto', status: 'disponivel' }
-      ]
-    }
+    profissionais: [] as Professional[]
   });
+
 
   const [metricas, setMetricas] = useState({
     taxaOcupacao: 87,
@@ -71,6 +55,20 @@ const Dashboard = () => {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    const loadProfissionais = async () => {
+      const profissionais = await DashboardApiService.getProfessionals();
+      console.log(profissionais);
+      
+      setDashboardData(prev => ({
+        ...prev,
+        profissionais
+      }));
+    };
+
+    loadProfissionais();
+  }, []);
+
   const atualizarMetricas = () => {
     setMetricas({
       taxaOcupacao: Math.floor(Math.random() * 20) + 80,
@@ -81,17 +79,11 @@ const Dashboard = () => {
   };
 
   const getMedicosDisponiveis = () => {
-    let total = 0;
-    const disponiveis: MedicoComAla[] = [];
-
-    Object.entries(dashboardData.medicosAlas).forEach(([ala, medicos]) => {
-      medicos.filter((m: Medico) => m.status === 'disponivel').forEach((medico: Medico) => {
-        total++;
-        disponiveis.push({ ...medico, ala });
-      });
-    });
-
-    return { total, disponiveis };
+    const disponiveis = dashboardData.profissionais.filter(p => p.status === 'disponivel');
+    return { 
+      total: disponiveis.length, 
+      disponiveis: disponiveis.map(p => ({ nome: p.name, status: p.status, sala: p.sala, ala: p.role })) 
+    };
   };
 
   const { total: totalDisponiveis, disponiveis: medicosDisponiveis } = getMedicosDisponiveis();
@@ -130,7 +122,7 @@ const Dashboard = () => {
         {showCalendar ? (
           <CalendarScreen setShowCalendar={setShowCalendar} showCalendar={showCalendar} />
         ) : (
-          <div className="p-4 space-y-4">
+          <div className="p-4 space-y-4  mx-auto w-[90vw]">
             <div className="dashboard-header">
               <h1><i className="fas fa-tachometer-alt"></i> Dashboard Executivo</h1>
               <div className="date-time">
@@ -286,17 +278,17 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              {/* Médicos por Ala */}
+              {/* Profissionais */}
               <div className="card medicos-alas-card">
                 <div className="card-header">
-                  <h2><i className="fas fa-user-md"></i> Médicos por Ala</h2>
+                  <h2><i className="fas fa-users"></i> Profissionais</h2>
                 </div>
                 <div className="medicos-alas">
-                  {Object.entries(dashboardData.medicosAlas).map(([ala, medicos]) => (
-                    <div key={ala} className="ala-medicos">
-                      <h4>{alaNames[ala]}</h4>
+                  {dashboardData.profissionais.map((item) => (
+                    <div key={item.id} className="ala-medicos">
+                      <h4>{item.role.map(role => RoleProfessions[role]).join(', ')}</h4>
                       <div className="medicos-list">
-                        {medicos.map((medico: Medico, index: number) => {
+                        {dashboardData.profissionais.map((profissional: Professional, index: number) => {
                           const statusIcon: Record<string, string> = {
                             'disponivel': 'fas fa-circle text-success',
                             'cirurgia': 'fas fa-circle text-danger',
@@ -305,44 +297,15 @@ const Dashboard = () => {
 
                           return (
                             <div key={index} className="medico-item">
-                              <i className={statusIcon[medico.status]}></i>
-                              <span>{medico.nome}</span>
-                              {medico.sala && <small>({medico.sala})</small>}
+                              <i className={statusIcon[profissional.status]}></i>
+                              <span>{profissional.name}</span>
+                              {profissional.sala && <small>({profissional.sala})</small>}
                             </div>
                           );
                         })}
                       </div>
                     </div>
                   ))}
-                </div>
-              </div>
-
-              {/* Médicos Disponíveis */}
-              <div className="card medicos-online-card">
-                <div className="card-header">
-                  <h2><i className="fas fa-user-md"></i> Médicos Disponíveis</h2>
-                  <span className="online-count">{totalDisponiveis}</span>
-                </div>
-                <div className="medicos-online">
-                  {medicosDisponiveis.length > 0 ? medicosDisponiveis.map((medico: MedicoComAla, index: number) => {
-                    const iniciais = medico.nome.split(' ').map((n: string) => n[0]).join('');
-                    const bgColor = '#10b981';
-                    return (
-                      <div key={index} className="medico-online-item">
-                        <div className="medico-avatar-small" style={{ backgroundColor: bgColor }}>{iniciais}</div>
-                        <div>
-                          <strong>{medico.nome}</strong>
-                          <p>{alaNames[medico.ala]} - <span style={{ color: '#10b981', fontWeight: '500' }}>Disponível</span></p>
-                        </div>
-                        <div className="status-indicator" style={{ backgroundColor: '#10b981' }}></div>
-                      </div>
-                    );
-                  }) : (
-                    <div style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>
-                      <i className="fas fa-user-slash" style={{ fontSize: '2rem', marginBottom: '1rem', display: 'block' }}></i>
-                      <p>Nenhum médico disponível no momento</p>
-                    </div>
-                  )}
                 </div>
               </div>
 
