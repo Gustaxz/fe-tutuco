@@ -321,7 +321,7 @@ const Dashboard = () => {
               </div>
 
               {/* Profissionais */}
-              <div className="card medicos-alas-card">
+              {/* <div className="card medicos-alas-card">
                 <div className="card-header">
                   <h2><i className="fas fa-users"></i> Profissionais</h2>
                 </div>
@@ -356,7 +356,7 @@ const Dashboard = () => {
                     </div>
                   ))}
                 </div>
-              </div>
+              </div> */}
 
               {/* Métricas */}
               <div className="card metricas-card">

@@ -204,7 +204,6 @@ export default function Scheduler({
       } as const
 
       const result = await ScheduleApiService.createScheduleSurgery(payload as any)
-      alert(`Cirurgia agendada! ID: ${result?.id ?? '—'}`)
       onCloseInternal()
     } catch (e) {
       alert('Falha ao agendar cirurgia. Tente novamente.')
