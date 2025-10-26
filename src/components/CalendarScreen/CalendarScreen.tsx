@@ -222,7 +222,7 @@ export function CalendarScreen({ setShowCalendar, showCalendar }: CalendarScreen
                 <div className="flex items-center gap-12">
                     <div className="nav-brand" onClick={() => setShowCalendar(false)} style={{ cursor: 'pointer' }}>
                         <i className="fas fa-hospital"></i>
-                        <span>CoreMed</span>
+                        <span>MedCore</span>
                     </div>
                     <div className="flex flex-col">
                         <div className="flex items-center gap-2">
@@ -234,7 +234,7 @@ export function CalendarScreen({ setShowCalendar, showCalendar }: CalendarScreen
 
                 <ul className="nav-menu">
                     <li><a href="#" className={!showCalendar ? 'active' : ''} onClick={() => setShowCalendar(false)}><i className="fas fa-home"></i> Dashboard</a></li>
-                    <li><a href="#" className={showCalendar ? 'active' : ''} onClick={() => setShowCalendar(true)}><i className="fas fa-calendar-plus"></i> Agendar</a></li>
+                    <li><a href="#" className={showCalendar ? 'active' : ''} onClick={() => setShowCalendar(true)}><i className="fas fa-calendar-plus"></i> Agenda</a></li>
                 </ul>
             </header>
             <div className="p-4 space-y-4">

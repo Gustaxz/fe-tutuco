@@ -121,14 +121,14 @@ const Dashboard = () => {
             <div className="flex items-center gap-12">
               <div className="nav-brand" onClick={() => setShowCalendar(false)} style={{ cursor: 'pointer' }}>
                 <i className="fas fa-hospital"></i>
-                <span>CoreMed</span>
+                <span>MedCore</span>
               </div>
 
             </div>
 
             <ul className="nav-menu">
               <li><a href="#" className={!showCalendar ? 'active' : ''} onClick={() => setShowCalendar(false)}><i className="fas fa-home"></i> Dashboard</a></li>
-              <li><a href="#" className={showCalendar ? 'active' : ''} onClick={() => setShowCalendar(true)}><i className="fas fa-calendar-plus"></i> Agendar</a></li>
+              <li><a href="#" className={showCalendar ? 'active' : ''} onClick={() => setShowCalendar(true)}><i className="fas fa-calendar-plus"></i> Agenda</a></li>
             </ul>
           </header>
         </>
@@ -272,7 +272,7 @@ const Dashboard = () => {
                   <div className="ala-card cardio">
                     <div className="ala-header">
                       <i className="fas fa-heart"></i>
-                      <h3>Ala Cardiologia</h3>
+                      <h3>Ala Cardiológica</h3>
                     </div>
                     <div className="ala-salas">
                       <div className="sala-mini occupied">C01</div>
@@ -284,7 +284,7 @@ const Dashboard = () => {
                   <div className="ala-card neuro">
                     <div className="ala-header">
                       <i className="fas fa-brain"></i>
-                      <h3>Ala Neurologia</h3>
+                      <h3>Ala Neurológica</h3>
                     </div>
                     <div className="ala-salas">
                       <div className="sala-mini available">N01</div>
@@ -296,7 +296,7 @@ const Dashboard = () => {
                   <div className="ala-card ortho">
                     <div className="ala-header">
                       <i className="fas fa-bone"></i>
-                      <h3>Ala Ortopedia</h3>
+                      <h3>Ala Ortopedica</h3>
                     </div>
                     <div className="ala-salas">
                       <div className="sala-mini occupied">O01</div>
