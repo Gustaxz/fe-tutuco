@@ -2,6 +2,7 @@ import { Button } from '../ui/button'
 import type { Booking } from '../../api/ScheduleMock'
 import type { Room } from '../../api/ScheduleApi'
 import { translateRoles } from '../../utils/roleMapper'
+import { translateStatus, getStatusColors } from '../../utils/statusMapper'
 
 interface BookingDetailsModalProps {
   isOpen: boolean
@@ -33,13 +34,23 @@ export function BookingDetailsModal({
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-t-2xl shrink-0">
           <div className="flex justify-between items-start">
-            <div>
-              <h2 className="text-2xl font-bold mb-2">"{booking.title}"</h2>
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <h2 className="text-2xl font-bold">"{booking.title}"</h2>
+              </div>
               <p className="text-blue-100 text-sm">ID: {booking.id}</p>
+              {(() => {
+                  const statusStyle = getStatusColors(booking.status)
+                  return (
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold mt-4 ${statusStyle.bg} ${statusStyle.text}`}>
+                      {statusStyle.icon} {translateStatus(booking.status)}
+                    </span>
+                  )
+                })()}
             </div>
             <button
               onClick={onClose}
-              className="text-white/80 hover:text-white cursor-pointer transition-colors"
+              className="text-white/80 hover:text-white cursor-pointer transition-colors ml-4"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -96,40 +107,40 @@ export function BookingDetailsModal({
               </div>
             </div>
 
-            {/* Surgery Type and Urgency */}
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="flex items-center gap-2 text-gray-600 mb-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                    </svg>
-                    <span className="text-sm font-medium">Tipo de Cirurgia</span>
-                  </div>
-                  <p className="text-lg font-semibold text-gray-900">{booking.surgeryType}</p>
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 text-gray-600 mb-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                    <span className="text-sm font-medium">Urgência</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${booking.urgency === 'emergency' ? 'bg-red-100 text-red-800' :
-                        booking.urgency === 'high' ? 'bg-orange-100 text-orange-800' :
-                          booking.urgency === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-green-100 text-green-800'
-                      }`}>
-                      {booking.urgency === 'emergency' ? '🚨 Emergência' :
-                        booking.urgency === 'high' ? '⚠️ Alta' :
-                          booking.urgency === 'medium' ? '📋 Média' :
-                            '✓ Baixa'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
+             {/* Surgery Type and Urgency */}
+             <div className="bg-gray-50 rounded-lg p-4">
+               <div className="grid grid-cols-2 gap-4">
+                 <div>
+                   <div className="flex items-center gap-2 text-gray-600 mb-2">
+                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                     </svg>
+                     <span className="text-sm font-medium">Tipo de Cirurgia</span>
+                   </div>
+                   <p className="text-lg font-semibold text-gray-900">{booking.surgeryType}</p>
+                 </div>
+                 <div>
+                   <div className="flex items-center gap-2 text-gray-600 mb-2">
+                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                     </svg>
+                     <span className="text-sm font-medium">Urgência</span>
+                   </div>
+                   <div className="flex items-center gap-2">
+                     <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${booking.urgency === 'emergency' ? 'bg-red-100 text-red-800' :
+                         booking.urgency === 'high' ? 'bg-orange-100 text-orange-800' :
+                           booking.urgency === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                             'bg-green-100 text-green-800'
+                       }`}>
+                       {booking.urgency === 'emergency' ? '🚨 Emergência' :
+                         booking.urgency === 'high' ? '⚠️ Alta' :
+                           booking.urgency === 'medium' ? '📋 Média' :
+                             '✓ Baixa'}
+                     </span>
+                   </div>
+                 </div>
+               </div>
+             </div>
 
             {/* Date and Time Section */}
             <div className="bg-gray-50 rounded-lg p-4">

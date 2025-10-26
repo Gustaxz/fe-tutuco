@@ -1,8 +1,8 @@
 import axios from 'axios'
-import type { Booking, TeamMember } from './ScheduleMock'
+import type { Booking, TeamMember, SurgeryStatus } from './ScheduleMock'
 
 const API_BASE_URL = 'https://project.freshroots.com.br'
-const HOSPITAL_ID = '5582b1bd-11db-46cb-9cc2-dacbbfb9b029'
+const HOSPITAL_ID = ''
 
 // API Response Types
 interface ApiRoom {
@@ -134,7 +134,6 @@ export const ScheduleApiService = {
           hospital_id: HOSPITAL_ID,
         },
       })
-
       // Transform API response to Booking format
       let bookings = response.data.map(surgery => {
         // Find the surgeon from the team
@@ -164,23 +163,36 @@ export const ScheduleApiService = {
           available: Math.random() > 0.2, // Mock: 80% chance of being available
         }))
 
-        return {
-          id: surgery.id,
-          title: `Cirurgia - ${surgery.ocupation.id_room}`,
-          roomId: surgery.ocupation.id_room,
-          date: dateStr,
-          start: startTime,
-          end: endTime,
-          doctorName,
-          patientName: 'Paciente', // Not provided by API, placeholder
-          surgeryType: 'Cirurgia Geral', // Not provided by API, placeholder
-          urgency,
-          team,
-        } as Booking
-      })
+        // Mock status based on current time comparison (will be from API later)
+        const now = new Date()
+        let status: SurgeryStatus = 'SCHEDULED'
+        if (startDate < now && endDate > now) {
+          status = 'IN_PROGRESS'
+        } else if (endDate < now) {
+          status = 'COMPLETED'
+        }
 
-      // Filter by date
-      bookings = bookings.filter(b => b.date === date)
+        
+        
+        return {
+            id: surgery.id,
+            title: `Cirurgia - ${surgery.ocupation.id_room}`,
+            roomId: surgery.ocupation.id_room,
+            date: dateStr,
+            start: startTime,
+            end: endTime,
+            doctorName,
+            patientName: 'Paciente', // Not provided by API, placeholder
+            surgeryType: 'Cirurgia Geral', // Not provided by API, placeholder
+            urgency,
+            status,
+            team,
+        } as Booking
+    })
+    
+    // Filter by date
+    console.log("respona", bookings)
+    bookings = bookings.filter(b => b.date === date)
 
       // Filter by center if provided
       if (centerId) {
