@@ -122,7 +122,7 @@ const Dashboard = () => {
         {showCalendar ? (
           <CalendarScreen setShowCalendar={setShowCalendar} showCalendar={showCalendar} />
         ) : (
-          <div className="p-4 space-y-4">
+          <div className="p-4 space-y-4  mx-auto w-[90vw]">
             <div className="dashboard-header">
               <h1><i className="fas fa-tachometer-alt"></i> Dashboard Executivo</h1>
               <div className="date-time">
