@@ -24,6 +24,7 @@ import {
   searchSlots,
 } from "../../api/scheduleAdapter";
 import SearchEmployeesModal from "./modal/SearchEmployeesModal";
+import { DialogOverlay } from "@radix-ui/react-dialog";
 
 const addHours = (startIso: string, hours: number) =>
   new Date(new Date(startIso).getTime() + hours * 3600000).toISOString();
@@ -163,177 +164,180 @@ export default function Scheduler({
 
   return (
     <Dialog open={open} onOpenChange={(o) => (!o ? onCloseInternal() : null)}>
-      <DialogContent className="w-[90vw] max-w-6xl max-h-[90vh] overflow-y-auto rounded-2xl p-0">
-        <div className="p-6 border-b">
-          <DialogHeader>
-            <DialogTitle>Cadastro de Cirurgia</DialogTitle>
-            <DialogDescription>
-              Preencha as 3 etapas para agendar o procedimento (mock).
-            </DialogDescription>
-          </DialogHeader>
-        </div>
-
-        {/* stepper */}
-        <div className="px-6 pt-4">
-          <div className="flex items-center gap-3">
-            {[1, 2, 3].map((s) => (
-              <div key={s} className="flex items-center gap-3">
-                <div
-                  className={`h-9 w-9 rounded-full flex items-center justify-center text-sm font-medium shadow ${
-                    step >= (s as any)
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
-                  }`}
-                >
-                  {s}
-                </div>
-                {s < 3 && (
-                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                )}
-              </div>
-            ))}
+      <DialogOverlay className="w-[100vw]" />
+      <DialogContent className="w-[90vw] max-w-none max-h-[95vh]  rounded-2xl p-8">
+        <div className="overflow-y-auto max-h-[80vh]">
+          <div className="p-6 border-b">
+            <DialogHeader>
+              <DialogTitle>Cadastro de Cirurgia</DialogTitle>
+              <DialogDescription>
+                Preencha as 3 etapas para agendar o procedimento (mock).
+              </DialogDescription>
+            </DialogHeader>
           </div>
-        </div>
 
-        {/* conteúdo */}
-        <div className="p-6">
-          {step === 1 && (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="grid gap-4"
-            >
-              <StepOneProcedureSelector
-                pacienteId={pacienteId}
-                onPacienteId={setPacienteId}
-                procedimento={procedimento}
-                onProcedimento={setProcedimento}
-                duracaoHoras={duracaoHoras}
-                onDuracaoHoras={setDuracaoHoras}
-                data={data}
-                onData={setData}
-                centroId={centroId}
-                onCentroId={setCentroId}
-                medicoRespId={medicoRespId}
-                onMedicoRespId={setMedicoRespId}
-                salaId={salaId}
-                onSalaId={setSalaId}
-                medicos={medicos}
-                salas={salas}
-                slots={slots}
-                slotSelecionado={slotSelecionado}
-                onSlotSelecionado={setSlotSelecionado}
-                onConsultar={handleConsultar}
-                slotsLoading={slotsLoading}
-                centros={centros}
-              />
-              <div className="flex justify-end gap-2">
-                <Button variant="secondary" onClick={onCloseInternal}>
-                  Cancelar
-                </Button>
-                <Button disabled={!podeAvancar1} onClick={() => setStep(2)}>
-                  Confirmar & avançar
-                </Button>
-              </div>
-            </motion.div>
-          )}
+          {/* stepper */}
+          <div className="px-6 pt-4 ">
+            <div className="flex items-center gap-3">
+              {[1, 2, 3].map((s) => (
+                <div key={s} className="flex items-center gap-3">
+                  <div
+                    className={`h-9 w-9 rounded-full flex items-center justify-center text-sm font-medium shadow ${
+                      step >= (s as any)
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted"
+                    }`}
+                  >
+                    {s}
+                  </div>
+                  {s < 3 && (
+                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
 
-          {step === 2 && (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="grid gap-4"
-            >
-              <Card className="p-4">
-                <EmployeeAvailabilitySelector
+          {/* conteúdo */}
+          <div className="p-6">
+            {step === 1 && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="grid gap-4"
+              >
+                <StepOneProcedureSelector
+                  pacienteId={pacienteId}
+                  onPacienteId={setPacienteId}
+                  procedimento={procedimento}
+                  onProcedimento={setProcedimento}
+                  duracaoHoras={duracaoHoras}
+                  onDuracaoHoras={setDuracaoHoras}
+                  data={data}
+                  onData={setData}
+                  centroId={centroId}
+                  onCentroId={setCentroId}
+                  medicoRespId={medicoRespId}
+                  onMedicoRespId={setMedicoRespId}
+                  salaId={salaId}
+                  onSalaId={setSalaId}
+                  medicos={medicos}
+                  salas={salas}
+                  slots={slots}
+                  slotSelecionado={slotSelecionado}
+                  onSlotSelecionado={setSlotSelecionado}
+                  onConsultar={handleConsultar}
+                  slotsLoading={slotsLoading}
+                  centros={centros}
+                />
+                <div className="flex justify-end gap-2">
+                  <Button variant="secondary" onClick={onCloseInternal}>
+                    Cancelar
+                  </Button>
+                  <Button disabled={!podeAvancar1} onClick={() => setStep(2)}>
+                    Confirmar & avançar
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+
+            {step === 2 && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="grid gap-4"
+              >
+                <Card className="p-4">
+                  <EmployeeAvailabilitySelector
+                    janela={{
+                      inicio: inicioSelecionado ?? new Date().toISOString(),
+                      fim:
+                        fimSelecionado ??
+                        addHours(new Date().toISOString(), duracaoHoras),
+                    }}
+                    value={funcionarios}
+                    onChange={setFuncionarios}
+                  />
+                </Card>
+
+                {/* modal de busca por cima */}
+                <SearchEmployeesModal
+                  open={searchOpen}
+                  onClose={() => setSearchOpen(false)}
                   janela={{
                     inicio: inicioSelecionado ?? new Date().toISOString(),
                     fim:
                       fimSelecionado ??
                       addHours(new Date().toISOString(), duracaoHoras),
                   }}
-                  value={funcionarios}
-                  onChange={setFuncionarios}
-                />
-              </Card>
-
-              {/* modal de busca por cima */}
-              <SearchEmployeesModal
-                open={searchOpen}
-                onClose={() => setSearchOpen(false)}
-                janela={{
-                  inicio: inicioSelecionado ?? new Date().toISOString(),
-                  fim:
-                    fimSelecionado ??
-                    addHours(new Date().toISOString(), duracaoHoras),
-                }}
-                onSelect={(novos) => {
-                  setFuncionarios((prev) => {
-                    const ids = new Set(prev.map((p: any) => p.id));
-                    return [...prev, ...novos.filter((n) => !ids.has(n.id))];
-                  });
-                }}
-              />
-
-              <div className="flex justify-between">
-                <Button variant="secondary" onClick={() => setStep(1)}>
-                  Voltar
-                </Button>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={handleValidar}
-                    disabled={!podeAgendar}
-                  >
-                    Validar
-                  </Button>
-                  <Button onClick={() => setStep(3)} disabled={!podeAgendar}>
-                    Avançar
-                  </Button>
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {step === 3 && (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="grid gap-4"
-            >
-              <Card className="p-4">
-                <EquipmentAvailabilitySelector
-                  janela={{
-                    inicio: inicioSelecionado ?? new Date().toISOString(),
-                    fim:
-                      fimSelecionado ??
-                      addHours(new Date().toISOString(), duracaoHoras),
+                  onSelect={(novos) => {
+                    setFuncionarios((prev) => {
+                      const ids = new Set(prev.map((p: any) => p.id));
+                      return [...prev, ...novos.filter((n) => !ids.has(n.id))];
+                    });
                   }}
-                  recursos={recursos}
-                  onChangeRecursos={setRecursos}
-                  itens={itens}
-                  onChangeItens={setItens}
                 />
-              </Card>
-              <div className="flex justify-between">
-                <Button variant="secondary" onClick={() => setStep(2)}>
-                  Voltar
-                </Button>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={handleValidar}
-                    disabled={!podeAgendar}
-                  >
-                    Validar
+
+                <div className="flex justify-between">
+                  <Button variant="secondary" onClick={() => setStep(1)}>
+                    Voltar
                   </Button>
-                  <Button onClick={handleAgendar} disabled={!podeAgendar}>
-                    Agendar
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={handleValidar}
+                      disabled={!podeAgendar}
+                    >
+                      Validar
+                    </Button>
+                    <Button onClick={() => setStep(3)} disabled={!podeAgendar}>
+                      Avançar
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          )}
+              </motion.div>
+            )}
+
+            {step === 3 && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="grid gap-4"
+              >
+                <Card className="p-4">
+                  <EquipmentAvailabilitySelector
+                    janela={{
+                      inicio: inicioSelecionado ?? new Date().toISOString(),
+                      fim:
+                        fimSelecionado ??
+                        addHours(new Date().toISOString(), duracaoHoras),
+                    }}
+                    recursos={recursos}
+                    onChangeRecursos={setRecursos}
+                    itens={itens}
+                    onChangeItens={setItens}
+                  />
+                </Card>
+                <div className="flex justify-between">
+                  <Button variant="secondary" onClick={() => setStep(2)}>
+                    Voltar
+                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={handleValidar}
+                      disabled={!podeAgendar}
+                    >
+                      Validar
+                    </Button>
+                    <Button onClick={handleAgendar} disabled={!podeAgendar}>
+                      Agendar
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>

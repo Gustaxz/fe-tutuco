@@ -1,6 +1,9 @@
 export type Sala = { id: number; nome: string };
+
 export type Medico = { id: number; nome: string };
+
 export type CentroCirurgico = { id: number; nome: string };
+
 export type Slot = {
   inicio: string; // ISO
   fim: string; // ISO
@@ -11,23 +14,32 @@ export type Slot = {
   salaNome?: string;
 };
 
-export type Funcionario = {
+export interface Funcionario {
   id: number;
   nome: string;
   interno: boolean;
-  especialidades: number[];
   disponivel: boolean;
   motivo?: string;
-};
+  especialidades: { id: number; nome: string }[];
+}
 
-export type Recurso = {
+/**
+ * Recurso físico ou material — usado tanto para reutilizáveis
+ * quanto para descartáveis (disposable = true)
+ */
+export interface Recurso {
   id: number;
   nome: string;
   externo: boolean; // true = externo, false = próprio
   disponivel: boolean;
   motivo?: string;
   grupoId?: number;
-};
+
+  // campos opcionais usados quando for um recurso descartável
+  disposable?: boolean; // true → recurso descartável
+  estoque?: number; // quantidade disponível em estoque
+  unidade?: string; // unidade de medida (ex.: 'cx', 'pct', 'un')
+}
 
 export type ItemDescartavel = {
   id: number;

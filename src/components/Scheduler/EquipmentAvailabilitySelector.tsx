@@ -1,6 +1,6 @@
-
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Check, X, Plus } from "lucide-react";
 import type { Recurso } from "./types";
 import SearchEquipmentModal from "./modal/SearchEquipmentModal";
@@ -10,30 +10,84 @@ export interface EquipmentAvailabilitySelectorProps {
   janela: { inicio: string; fim: string };
   recursos: Recurso[];
   onChangeRecursos: (list: Recurso[]) => void;
-  itens: { itemTipoId: number; nome: string; unidade: string; quantidade: number; disponivel: number }[];
-  onChangeItens: (list: { itemTipoId: number; nome: string; unidade: string; quantidade: number; disponivel: number }[]) => void;
+  itens: {
+    itemTipoId: number;
+    nome: string;
+    unidade: string;
+    quantidade: number;
+    disponivel: number;
+  }[];
+  onChangeItens: (
+    list: {
+      itemTipoId: number;
+      nome: string;
+      unidade: string;
+      quantidade: number;
+      disponivel: number;
+    }[]
+  ) => void;
 }
 
-export default function EquipmentAvailabilitySelector(props: EquipmentAvailabilitySelectorProps) {
-  const { janela, recursos, onChangeRecursos, itens, onChangeItens } = props;
-  const [openRec, setOpenRec] = React.useState(false);
-  const [openDesc, setOpenDesc] = React.useState(false);
+export default function EquipmentAvailabilitySelector({
+  janela,
+  recursos,
+  onChangeRecursos,
+  itens,
+  onChangeItens,
+}: EquipmentAvailabilitySelectorProps) {
+  const [openRec, setOpenRec] = useState(false);
+  const [openDesc, setOpenDesc] = useState(false);
+
+  const removerRecurso = (id: number) =>
+    onChangeRecursos(recursos.filter((x) => x.id !== id));
+
+  const removerItem = (id: number) =>
+    onChangeItens(itens.filter((x) => x.itemTipoId !== id));
+
+  const setQuantidade = (itemTipoId: number, value: string) => {
+    const parsed = Math.floor(Number(value) || 0);
+    onChangeItens(
+      itens.map((i) => {
+        if (i.itemTipoId !== itemTipoId) return i;
+        const min = 1;
+        const max = Number.isFinite(i.disponivel)
+          ? Math.max(1, i.disponivel)
+          : undefined;
+        const clamped =
+          parsed < min ? min : max ? Math.min(parsed, max) : parsed;
+        return { ...i, quantidade: clamped };
+      })
+    );
+  };
 
   return (
-    <div className="grid lg:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 gap-6">
       {/* Recursos Reutilizáveis */}
-      <div>
-        <div className="flex justify-end mb-3">
-          <Button onClick={() => setOpenRec(true)}><Plus className="h-4 w-4 mr-2"/>Adicionar</Button>
+      <section>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-medium">Recursos Reutilizáveis</h3>
+          <Button onClick={() => setOpenRec(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Adicionar
+          </Button>
         </div>
-        <div className="rounded-2xl border overflow-auto">
-          <table className="w-full text-sm">
-            <thead className="sticky top-0 bg-background">
+
+        <div className="rounded-2xl border overflow-auto max-h-80 relative">
+          <table className="w-full text-sm table-fixed">
+            <colgroup>
+              <col className="w-[60%]" />
+              <col className="w-28" />
+              <col className="w-36" />
+              <col className="w-24" />
+            </colgroup>
+            <thead className="sticky top-0 z-20 border-b bg-background supports-[backdrop-filter]:bg-background/80 backdrop-blur">
               <tr className="text-left">
-                <th className="p-3">Recurso</th>
-                <th>Origem</th>
-                <th>Disponibilidade</th>
-                <th></th>
+                <th className="p-3 whitespace-nowrap bg-inherit">Recurso</th>
+                <th className="p-3 whitespace-nowrap bg-inherit">Origem</th>
+                <th className="p-3 whitespace-nowrap bg-inherit">
+                  Disponibilidade
+                </th>
+                <th className="p-3 whitespace-nowrap bg-inherit"></th>
               </tr>
             </thead>
             <tbody>
@@ -41,30 +95,69 @@ export default function EquipmentAvailabilitySelector(props: EquipmentAvailabili
                 <tr key={r.id} className="border-t">
                   <td className="p-3">{r.nome}</td>
                   <td>{r.externo ? "Externo" : "Próprio"}</td>
-                  <td>{r.disponivel ? <span className="text-green-600 text-xs inline-flex items-center gap-1"><Check className="h-3 w-3"/>Disponível</span> : <span className="text-red-600 text-xs inline-flex items-center gap-1"><X className="h-3 w-3"/>Bloqueado</span>}</td>
-                  <td className="text-right"><Button variant="ghost" size="sm" onClick={() => onChangeRecursos(recursos.filter((x) => x.id !== r.id))}>Remover</Button></td>
+                  <td>
+                    {r.disponivel ? (
+                      <span className="text-green-600 text-xs inline-flex items-center gap-1">
+                        <Check className="h-3 w-3" /> Disponível
+                      </span>
+                    ) : (
+                      <span className="text-red-600 text-xs inline-flex items-center gap-1">
+                        <X className="h-3 w-3" /> Bloqueado
+                      </span>
+                    )}
+                  </td>
+                  <td className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removerRecurso(r.id)}
+                    >
+                      Remover
+                    </Button>
+                  </td>
                 </tr>
               ))}
-              {recursos.length === 0 && <tr><td colSpan={4} className="p-4 text-center text-xs text-muted-foreground">Nenhum recurso adicionado.</td></tr>}
+
+              {recursos.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={4}
+                    className="p-4 text-center text-xs text-muted-foreground"
+                  >
+                    Nenhum recurso adicionado.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
 
       {/* Itens Descartáveis */}
-      <div>
-        <div className="flex justify-end mb-3">
-          <Button onClick={() => setOpenDesc(true)}><Plus className="h-4 w-4 mr-2"/>Adicionar</Button>
+      <section>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-medium">Itens Descartáveis</h3>
+          <Button onClick={() => setOpenDesc(true)}>
+            <Plus className="h-4 w-4 mr-2" /> Adicionar
+          </Button>
         </div>
-        <div className="rounded-2xl border overflow-auto">
-          <table className="w-full text-sm">
-            <thead className="sticky top-0 bg-background">
+
+        <div className="rounded-2xl border overflow-auto max-h-80 relative">
+          <table className="w-full text-sm table-fixed">
+            <colgroup>
+              <col className="w-[55%]" />
+              <col className="w-24" />
+              <col className="w-24" />
+              <col className="w-24" />
+              <col className="w-24" />
+            </colgroup>
+            <thead className="sticky top-0 z-20 border-b bg-background supports-[backdrop-filter]:bg-background/80 backdrop-blur">
               <tr className="text-left">
-                <th className="p-3">Item</th>
-                <th>Unid.</th>
-                <th>Qtd</th>
-                <th>Disponível</th>
-                <th></th>
+                <th className="p-3 whitespace-nowrap bg-inherit">Item</th>
+                <th className="p-3 whitespace-nowrap bg-inherit">Unid.</th>
+                <th className="p-3 whitespace-nowrap bg-inherit">Qtd</th>
+                <th className="p-3 whitespace-nowrap bg-inherit">Disponível</th>
+                <th className="p-3 whitespace-nowrap bg-inherit"></th>
               </tr>
             </thead>
             <tbody>
@@ -72,30 +165,67 @@ export default function EquipmentAvailabilitySelector(props: EquipmentAvailabili
                 <tr key={i.itemTipoId} className="border-t">
                   <td className="p-3">{i.nome}</td>
                   <td>{i.unidade}</td>
-                  <td>{i.quantidade}</td>
+                  <td className="w-24">
+                    <Input
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      value={i.quantidade}
+                      onChange={(e) =>
+                        setQuantidade(i.itemTipoId, e.target.value)
+                      }
+                      className="h-8 w-16 text-center"
+                    />
+                  </td>
                   <td>{i.disponivel}</td>
-                  <td className="text-right"><Button variant="ghost" size="sm" onClick={() => onChangeItens(itens.filter((x) => x.itemTipoId !== i.itemTipoId))}>Remover</Button></td>
+                  <td className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removerItem(i.itemTipoId)}
+                    >
+                      Remover
+                    </Button>
+                  </td>
                 </tr>
               ))}
-              {itens.length === 0 && <tr><td colSpan={5} className="p-4 text-center text-xs text-muted-foreground">Nenhum item adicionado.</td></tr>}
+
+              {itens.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="p-4 text-center text-xs text-muted-foreground"
+                  >
+                    Nenhum item adicionado.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
 
+      {/* Modais */}
       <SearchEquipmentModal
         open={openRec}
         onClose={() => setOpenRec(false)}
         janela={janela}
         onSelect={(lista) => {
           const ids = new Set(recursos.map((a) => a.id));
-          onChangeRecursos([...recursos, ...lista.filter((n) => !ids.has(n.id))]);
+          const novos = lista.filter((n) => !ids.has(n.id));
+          onChangeRecursos([...recursos, ...novos]);
         }}
       />
+
       <SearchDisposableModal
         open={openDesc}
         onClose={() => setOpenDesc(false)}
-        onAdd={(item) => onChangeItens([...itens, item])}
+        janela={janela}
+        onSelect={(lista) => {
+          const ids = new Set(itens.map((x) => x.itemTipoId));
+          const novos = lista.filter((n) => !ids.has(n.itemTipoId));
+          onChangeItens([...itens, ...novos]);
+        }}
       />
     </div>
   );

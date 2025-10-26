@@ -8,7 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Check, Filter, X, Loader2, RotateCcw } from "lucide-react";
 import type { Funcionario } from "../types";
-import { searchFuncionarios } from "../api";
+//import { searchFuncionarios } from "../api";
 
 import {
   Dialog,
@@ -28,6 +28,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { FuncionarioService } from "@/api/FuncionarioService";
 
 type Props = {
   open: boolean;
@@ -70,13 +71,22 @@ export default function SearchEmployeesModal({
     setLoading(true);
     setBuscouAoMenosUmaVez(true);
     try {
-      const lista = await searchFuncionarios({
-        inicio: janela.inicio,
-        fim: janela.fim,
-        interno,
-        especialidadeId,
-        nome,
-      });
+      // const lista = await searchFuncionarios({
+      //   inicio: janela.inicio,
+      //   fim: janela.fim,
+      //   interno,
+      //   especialidadeId,
+      //   nome,
+      // });
+
+      const lista = await FuncionarioService.search({
+          inicio: janela.inicio,
+          fim: janela.fim,
+          interno,
+          especialidadeId,
+          nome,
+        });
+
       lista.sort(
         (a, b) =>
           Number(b.disponivel) - Number(a.disponivel) ||
@@ -110,7 +120,8 @@ export default function SearchEmployeesModal({
     <Dialog open={open} onOpenChange={(o) => (!o ? fechar() : null)}>
       <DialogPortal>
         <DialogOverlay className="z-[60]" />
-        <DialogContent className="w-[90vw] max-w-3xl max-h-[85vh] overflow-y-auto rounded-2xl p-0 z-[61]">
+        <DialogContent className="w-[90vw]  max-w-3xl max-h-[95vh]  rounded-2xl  z-[61]">
+                  <div className="overflow-y-auto max-h-[85vh] ">
           {/* Cabeçalho */}
           <div className="p-6 border-b">
             <DialogHeader>
@@ -317,6 +328,8 @@ export default function SearchEmployeesModal({
               </Button>
             </div>
           </motion.div>
+        
+        </div>
         </DialogContent>
       </DialogPortal>
     </Dialog>

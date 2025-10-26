@@ -1,4 +1,4 @@
-import type { Funcionario } from "../types";
+import type { Funcionario } from "@/components/Scheduler/types";
 
 const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
@@ -69,9 +69,10 @@ export class FuncionarioService {
       filtrados = filtrados.filter((f) => f.interno === params.interno);
     }
 
-    if (params.nome) {
+    if (params.nome?.trim()) {
+      const nomeLower = params.nome.toLowerCase();
       filtrados = filtrados.filter((f) =>
-        f.nome.toLowerCase().includes(params.nome.toLowerCase())
+        f.nome.toLowerCase().includes(nomeLower)
       );
     }
 
@@ -80,7 +81,6 @@ export class FuncionarioService {
         f.especialidades.some((e) => e.id === params.especialidadeId)
       );
     }
-
     return filtrados.sort((a, b) => a.nome.localeCompare(b.nome));
   }
 }
