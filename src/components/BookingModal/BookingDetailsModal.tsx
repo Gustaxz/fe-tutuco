@@ -243,7 +243,7 @@ export function BookingDetailsModal({
                           <div className={`w-2 h-2 rounded-full ${member.available ? 'bg-green-600' : 'bg-red-600'
                             }`}></div>
                           <span className="text-xs font-semibold">
-                            {member.available ? 'Disponível' : 'Indisponível'}
+                            {member.available ? 'Confirmado' : 'Indisponível'}
                           </span>
                         </div>
                       </div>
