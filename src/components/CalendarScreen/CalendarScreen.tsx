@@ -93,6 +93,8 @@ export function CalendarScreen({ setShowCalendar, showCalendar }: CalendarScreen
                     ])
                     if (!mounted) return
                     setCenters(fetchedCenters)
+                    // Select all centers by default
+                    setSelectedCenterIds(fetchedCenters.map(c => c.id))
                     setAllRooms(fetchedRooms)
                     setProfessionals(fetchedPros.map(p => ({ id: p.id, name: p.name })))
                 } catch (error) {
