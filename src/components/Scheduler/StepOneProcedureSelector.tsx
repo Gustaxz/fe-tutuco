@@ -1,4 +1,3 @@
-import React from "react";
 import { Search } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -30,12 +29,12 @@ export interface StepOneProcedureSelectorProps {
   onDuracaoHoras: (v: number) => void;
   data: string;
   onData: (v: string) => void;
-  centroId?: number;
-  onCentroId: (v?: number) => void;
-  medicoRespId?: number;
-  onMedicoRespId: (v?: number) => void;
-  salaId?: number;
-  onSalaId: (v?: number) => void;
+  centroId?: string;
+  onCentroId: (v?: string) => void;
+  medicoRespId?: string;
+  onMedicoRespId: (v?: string) => void;
+  salaId?: string;
+  onSalaId: (v?: string) => void;
   medicos: Medico[];
   salas: Sala[];
   slots: Slot[];
@@ -43,7 +42,7 @@ export interface StepOneProcedureSelectorProps {
   onSlotSelecionado: (s: Slot | null) => void;
   onConsultar: () => void;
   slotsLoading?: boolean;
-  centros: { id: number; nome: string }[];
+  centros: { id: string; nome: string }[];
 }
 
 export default function StepOneProcedureSelector({
@@ -127,8 +126,8 @@ export default function StepOneProcedureSelector({
                 Centro Cirúrgico
               </Label>
               <Select
-                value={centroId != null ? String(centroId) : undefined}
-                onValueChange={(v) => onCentroId(Number(v))}
+                value={centroId ?? undefined}
+                onValueChange={(v) => onCentroId(v)}
               >
                 <SelectTrigger className="w-full h-12 text-base rounded-lg">
                   <SelectValue placeholder="Selecione" />
@@ -137,7 +136,7 @@ export default function StepOneProcedureSelector({
                   <SelectGroup>
                     <SelectLabel>Centros</SelectLabel>
                     {centros.map((c) => (
-                      <SelectItem key={c.id} value={String(c.id)}>
+                      <SelectItem key={c.id} value={c.id}>
                         {c.nome}
                       </SelectItem>
                     ))}
@@ -151,8 +150,8 @@ export default function StepOneProcedureSelector({
                 Responsável
               </Label>
               <Select
-                value={medicoRespId ? String(medicoRespId) : undefined}
-                onValueChange={(v) => onMedicoRespId(Number(v))}
+                value={medicoRespId ?? undefined}
+                onValueChange={(v) => onMedicoRespId(v)}
               >
                 <SelectTrigger className="w-full h-12 text-base rounded-lg">
                   <SelectValue placeholder="Selecione" />
@@ -161,7 +160,7 @@ export default function StepOneProcedureSelector({
                   <SelectGroup>
                     <SelectLabel>Médicos</SelectLabel>
                     {medicos.map((m) => (
-                      <SelectItem key={m.id} value={String(m.id)}>
+                      <SelectItem key={m.id} value={m.id}>
                         {m.nome}
                       </SelectItem>
                     ))}
@@ -175,8 +174,8 @@ export default function StepOneProcedureSelector({
                 Sala
               </Label>
               <Select
-                value={salaId ? String(salaId) : undefined}
-                onValueChange={(v) => onSalaId(Number(v))}
+                value={salaId ?? undefined}
+                onValueChange={(v) => onSalaId(v)}
               >
                 <SelectTrigger className="w-full h-12 text-base rounded-lg">
                   <SelectValue placeholder="Selecione" />
@@ -185,7 +184,7 @@ export default function StepOneProcedureSelector({
                   <SelectGroup>
                     <SelectLabel>Salas</SelectLabel>
                     {salas.map((s) => (
-                      <SelectItem key={s.id} value={String(s.id)}>
+                      <SelectItem key={s.id} value={s.id}>
                         {s.nome}
                       </SelectItem>
                     ))}

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Check, X, Plus } from "lucide-react";
 import type { Funcionario } from "./types";
 import SearchEmployeesModal from "./modal/SearchEmployeesModal";
+import { translateRole } from "../../utils/roleMapper";
 
 export interface EmployeeAvailabilitySelectorProps {
   janela: { inicio: string; fim: string };
@@ -98,10 +99,61 @@ export default function EmployeeAvailabilitySelector({
         janela={janela}
         onSelect={handleSelect}
         especialidades={[
-          { id: 1, nome: "Anestesia" },
-          { id: 2, nome: "Cardiologia" },
-          { id: 3, nome: "Ortopedia" },
-        ]}
+          // Roles mapped to numeric ids for selector (display translated)
+          "SURGEON",
+          "ASSISTANT_SURGEON",
+          "ANESTHESIOLOGIST",
+          "RESIDENT_DOCTOR",
+
+          "SCRUB_NURSE",
+          "CIRCULATING_NURSE",
+          "RECOVERY_NURSE",
+
+          "SURGICAL_TECHNICIAN",
+          "RADIOLOGY_TECHNICIAN",
+          "PERFUSIONIST",
+          "STERILIZATION_TECH",
+
+          "OPERATING_ROOM_COORDINATOR",
+          "SURGICAL_SCHEDULER",
+          "INVENTORY_CLERK",
+
+          "CONTINGENCY_A_SURGEON",
+          "CONTINGENCY_A_ASSISTANT_SURGEON",
+          "CONTINGENCY_A_ANESTHESIOLOGIST",
+          "CONTINGENCY_A_RESIDENT_DOCTOR",
+
+          "CONTINGENCY_A_SCRUB_NURSE",
+          "CONTINGENCY_A_CIRCULATING_NURSE",
+          "CONTINGENCY_A_RECOVERY_NURSE",
+
+          "CONTINGENCY_A_SURGICAL_TECHNICIAN",
+          "CONTINGENCY_A_RADIOLOGY_TECHNICIAN",
+          "CONTINGENCY_A_PERFUSIONIST",
+          "CONTINGENCY_A_STERILIZATION_TECH",
+
+          "CONTINGENCY_A_OPERATING_ROOM_COORDINATOR",
+          "CONTINGENCY_A_SURGICAL_SCHEDULER",
+          "CONTINGENCY_A_INVENTORY_CLERK",
+
+          "CONTINGENCY_B_SURGEON",
+          "CONTINGENCY_B_ASSISTANT_SURGEON",
+          "CONTINGENCY_B_ANESTHESIOLOGIST",
+          "CONTINGENCY_B_RESIDENT_DOCTOR",
+
+          "CONTINGENCY_B_SCRUB_NURSE",
+          "CONTINGENCY_B_CIRCULATING_NURSE",
+          "CONTINGENCY_B_RECOVERY_NURSE",
+
+          "CONTINGENCY_B_SURGICAL_TECHNICIAN",
+          "CONTINGENCY_B_RADIOLOGY_TECHNICIAN",
+          "CONTINGENCY_B_PERFUSIONIST",
+          "CONTINGENCY_B_STERILIZATION_TECH",
+
+          "CONTINGENCY_B_OPERATING_ROOM_COORDINATOR",
+          "CONTINGENCY_B_SURGICAL_SCHEDULER",
+          "CONTINGENCY_B_INVENTORY_CLERK",
+        ].map((role, idx) => ({ id: idx + 1, nome: translateRole(role) }))}
       />
     </div>
   );

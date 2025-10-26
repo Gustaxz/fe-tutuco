@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -14,17 +14,12 @@ import { motion } from "framer-motion";
 import StepOneProcedureSelector from "./StepOneProcedureSelector";
 import EmployeeAvailabilitySelector from "./EmployeeAvailabilitySelector";
 import EquipmentAvailabilitySelector from "./EquipmentAvailabilitySelector";
-import type { Slot } from "./types";
+import type { Slot } from "./types"; // Updated to use string IDs
 
 // adapter
-import {
-  listCentros,
-  listSalas,
-  listMedicos,
-  searchSlots,
-} from "../../api/scheduleAdapter";
 import SearchEmployeesModal from "./modal/SearchEmployeesModal";
 import { DialogOverlay } from "@radix-ui/react-dialog";
+import { ScheduleApiService } from "../../api/ScheduleApi";
 
 const addHours = (startIso: string, hours: number) =>
   new Date(new Date(startIso).getTime() + hours * 3600000).toISOString();
@@ -44,13 +39,13 @@ export default function Scheduler({
   const [duracaoHoras, setDuracaoHoras] = useState(2);
   const [data, setData] = useState(() => new Date().toISOString().slice(0, 10));
 
-  const [centroId, setCentroId] = useState<number | undefined>();
-  const [medicoRespId, setMedicoRespId] = useState<number | undefined>();
-  const [salaId, setSalaId] = useState<number | undefined>();
+  const [centroId, setCentroId] = useState<string | undefined>();
+  const [medicoRespId, setMedicoRespId] = useState<string | undefined>();
+  const [salaId, setSalaId] = useState<string | undefined>();
 
-  const [centros, setCentros] = useState<{ id: number; nome: string }[]>([]);
-  const [salas, setSalas] = useState<{ id: number; nome: string }[]>([]);
-  const [medicos, setMedicos] = useState<{ id: number; nome: string }[]>([]);
+  const [centros, setCentros] = useState<{ id: string; nome: string }[]>([]);
+  const [salas, setSalas] = useState<{ id: string; nome: string }[]>([]);
+  const [medicos, setMedicos] = useState<{ id: string; nome: string }[]>([]);
 
   const [slots, setSlots] = useState<Slot[]>([]);
   const [slotSelecionado, setSlotSelecionado] = useState<Slot | null>(null);
@@ -70,12 +65,20 @@ export default function Scheduler({
 
   // carregamentos
   useEffect(() => {
-    listCentros()
-      .then(setCentros)
-      .catch(() => setCentros([]));
-    listMedicos()
-      .then(setMedicos)
-      .catch(() => setMedicos([]));
+    // Load surgery centers from real API
+    ScheduleApiService.getSurgeryCenters()
+      .then((centers) => {
+        setCentros(centers.map(c => ({ id: c.id, nome: c.name })));
+        
+        // Load professionals for Responsável selector (SURGEON role)
+        ScheduleApiService.getProfessionalsByRole('SURGEON')
+          .then((pros) => setMedicos(pros.map(p => ({ id: p.id, nome: p.name }))))
+          .catch(() => setMedicos([]))
+      })
+      .catch(() => {
+        setCentros([]);
+        setMedicos([]);
+      });
   }, []);
 
   useEffect(() => {
@@ -84,8 +87,9 @@ export default function Scheduler({
       setSalaId(undefined);
       return;
     }
-    listSalas(centroId)
-      .then((ss) => setSalas(ss.map((s) => ({ id: s.id, nome: s.nome }))))
+    // Load rooms from real API filtered by centerId
+    ScheduleApiService.getRooms(centroId)
+      .then((rooms) => setSalas(rooms.map((r) => ({ id: r.id, nome: r.name }))))
       .catch(() => setSalas([]));
     setSalaId(undefined);
   }, [centroId]);
@@ -98,20 +102,45 @@ export default function Scheduler({
   // consulta horários — envia só filtros definidos
   const [slotsLoading, setSlotsLoading] = useState(false);
   const handleConsultar = async () => {
-    if (typeof centroId !== "number") return;
+    if (!centroId) return;
     setSlotsLoading(true);
     try {
-      const params: any = {
-        date: data,
-        centroId,
-        ...(typeof salaId === "number" ? { salaId } : {}),
-        ...(typeof medicoRespId === "number"
-          ? { profissionalId: medicoRespId }
-          : {}),
-      };
-      const result = await searchSlots(params);
-      setSlots(result);
-    } catch {
+      // Build date_from and date_to based on selected date
+      const dateFrom = new Date(`${data}T08:00:00`).toISOString();
+      const dateTo = new Date(`${data}T18:00:00`).toISOString();
+      
+      const response = await ScheduleApiService.getAvailability({
+        surgical_center_id: centroId,
+        date_from: dateFrom,
+        date_to: dateTo,
+        duration_minutes: duracaoHoras * 60,
+        ...(medicoRespId && { required_professionals: [medicoRespId] }),
+        ...(salaId && { room_id: salaId }),
+        max_suggestions: 5,
+        buffer_time: 30,
+      });
+
+      // Transform API response to match Slot type
+      const transformedSlots: Slot[] = response.slots.map(slot => {
+        // Find the OPERATING_ROOM_COORDINATOR from available professionals
+        const coordinator = slot.available_professionals.find(p => 
+          p.role.includes('OPERATING_ROOM_COORDINATOR')
+        );
+        
+        return {
+          inicio: slot.start_time,
+          fim: slot.end_time,
+          score: slot.score,
+          salaId: slot.room.id,
+          salaNome: slot.room.name,
+          responsavelId: coordinator?.id,
+          medicoNome: slot.available_professionals.find(p => p.role.includes('SURGEON'))?.name,
+        };
+      });
+
+      setSlots(transformedSlots);
+    } catch (error) {
+      console.error('Error fetching availability:', error);
       setSlots([]);
     } finally {
       setSlotsLoading(false);

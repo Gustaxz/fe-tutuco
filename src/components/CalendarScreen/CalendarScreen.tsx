@@ -4,11 +4,12 @@ import { ScheduleApiService, type Room, type SurgeryCenter } from '../../api/Sch
 import { DatePicker } from '../ui/date-picker'
 import { Button } from '../ui/button'
 import { MultiSelect, type MultiSelectOption } from '../ui/multi-select'
-import { Home, RefreshCw } from 'lucide-react'
+import { Home, RefreshCw, CalendarPlus } from 'lucide-react'
 import { FaHeart, FaBrain, FaBone, FaVenus } from 'react-icons/fa'
 import { GiKidneys } from 'react-icons/gi'
 import { BookingDetailsModal } from '../BookingModal/BookingDetailsModal'
 import { getStatusColors, translateStatus } from '../../utils/statusMapper'
+import Scheduler from '../Scheduler/Scheduler'
 
 function formatHourLabel(hour: number): string {
     return `${hour.toString().padStart(2, '0')}:00`
@@ -74,6 +75,7 @@ export function CalendarScreen({ setShowCalendar, showCalendar }: CalendarScreen
     // Modal state
     const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
     const [showBookingModal, setShowBookingModal] = useState(false)
+    const [showScheduler, setShowScheduler] = useState(false)
 
     // Refresh state
     const [isRefreshing, setIsRefreshing] = useState(false)
@@ -254,14 +256,23 @@ export function CalendarScreen({ setShowCalendar, showCalendar }: CalendarScreen
                         </div>
                     </div>
 
-                    <Button 
-                        className='border-green-400 border-2 text-green-400 hover:bg-green-400 hover:text-white px-6 py-3 cursor-pointer rounded-2xl bg-transparent flex items-center gap-2 mb-2' 
-                        onClick={() => fetchBookings()}
-                        disabled={isRefreshing}
-                    >
-                        <RefreshCw className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} />
-                        Atualizar
-                    </Button>
+                    <div className="flex gap-2 mb-2">
+                        <Button 
+                            className='border-blue-500 border-2 text-blue-500 hover:bg-blue-500 hover:text-white px-6 py-3 cursor-pointer rounded-2xl bg-transparent flex items-center gap-2' 
+                            onClick={() => setShowScheduler(true)}
+                        >
+                            <CalendarPlus className="h-5 w-5" />
+                            Nova Cirurgia
+                        </Button>
+                        <Button 
+                            className='border-green-400 border-2 text-green-400 hover:bg-green-400 hover:text-white px-6 py-3 cursor-pointer rounded-2xl bg-transparent flex items-center gap-2' 
+                            onClick={() => fetchBookings()}
+                            disabled={isRefreshing}
+                        >
+                            <RefreshCw className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                            Atualizar
+                        </Button>
+                    </div>
                 </div>
 
                 <div className={`rounded-2xl overflow-hidden ${slideClass}`} key={selectedDate}>
@@ -369,6 +380,15 @@ export function CalendarScreen({ setShowCalendar, showCalendar }: CalendarScreen
                 room={selectedBooking ? visibleRooms.find(r => r.id === selectedBooking.roomId) ?? null : null}
                 centerName={selectedBooking ? centerIdToName.get(visibleRooms.find(r => r.id === selectedBooking.roomId)?.centerId ?? '') ?? '' : ''}
                 onStatusUpdate={fetchBookings}
+            />
+
+            <Scheduler
+                open={showScheduler}
+                onClose={() => {
+                    setShowScheduler(false)
+                    // Refresh bookings after scheduling
+                    fetchBookings()
+                }}
             />
         </>
     )

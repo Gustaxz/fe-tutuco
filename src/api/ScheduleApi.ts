@@ -48,6 +48,25 @@ interface ApiOcupation {
   deletedAt: string | null
 }
 
+interface ApiProfessional {
+  id: string
+  name: string
+  role: string[]
+  email?: string
+  phone?: string
+  type?: string
+}
+
+interface ApiEquipment {
+  id: string
+  id_room: string
+  id_hospital: string
+  id_group_equipment: string
+  name: string
+  type: 'OWNED' | 'THIRD_PARTY'
+  disposable: boolean
+}
+
 interface ApiPatient {
   id: string
   name: string
@@ -137,6 +156,59 @@ export const ScheduleApiService = {
     }
   },
 
+  async getProfessionalsByRole(role: string): Promise<Array<{ id: string; name: string; roles: string[] }>> {
+    try {
+      const response = await api.get<ApiProfessional[]>('/professionals', {
+        params: { roles: role },
+      })
+      return response.data.map(p => ({ id: p.id, name: p.name, roles: p.role }))
+    } catch (error) {
+      console.error('Error fetching professionals by role:', error)
+      return []
+    }
+  },
+
+  async getProfessionals(params: { available?: boolean; roles?: string; type?: 'OWNED' | 'THIRD_PARTY' }): Promise<Array<{ id: string; name: string; roles: string[]; type?: string }>> {
+    try {
+      const response = await api.get<ApiProfessional[]>('/professionals', {
+        params: {
+          ...(params.available !== undefined ? { available: params.available } : {}),
+          ...(params.roles ? { roles: params.roles } : {}),
+          ...(params.type ? { type: params.type } : {}),
+        },
+      })
+      return response.data.map(p => ({ id: p.id, name: p.name, roles: p.role, type: p.type }))
+    } catch (error) {
+      console.error('Error fetching professionals:', error)
+      return []
+    }
+  },
+
+  async getEquipment(params?: { type?: 'OWNED' | 'THIRD_PARTY' }): Promise<Array<{
+    id: string
+    name: string
+    type: 'OWNED' | 'THIRD_PARTY'
+    disposable: boolean
+  }>> {
+    try {
+      const response = await api.get<ApiEquipment[]>('/equipment', {
+        params: {
+          ...(params?.type ? { type: params.type } : {}),
+        },
+      })
+
+      return response.data.map(e => ({
+        id: e.id,
+        name: e.name,
+        type: e.type,
+        disposable: e.disposable,
+      }))
+    } catch (error) {
+      console.error('Error fetching equipment:', error)
+      return []
+    }
+  },
+
   async getBookingsByDate(date: string, centerId?: string, roomIds?: string[]): Promise<Booking[]> {
     try {
       const response = await api.get<ApiScheduleSurgery[]>('/schedule-surgery', {
@@ -176,7 +248,7 @@ export const ScheduleApiService = {
         
         return {
             id: surgery.id,
-            title: `Cirurgia - ${surgery.ocupation.id_room}`,
+            title: `Cirurgia - ${surgery.ocupation.patient.name}`,
             roomId: surgery.ocupation.id_room,
             date: dateStr,
             start: startTime,
@@ -225,5 +297,73 @@ export const ScheduleApiService = {
       throw error
     }
   },
-}
 
+  async getAvailability(params: {
+    surgical_center_id: string
+    hospital_id?: string
+    room_id?: string
+    room_type?: string
+    date_from: string
+    date_to: string
+    duration_minutes?: number
+    required_professionals?: string[]
+    required_roles?: string[]
+    required_equipment?: string[]
+    required_equipment_groups?: string[]
+    max_suggestions?: number
+    buffer_time?: number
+  }): Promise<{
+    slots: Array<{
+      start_time: string
+      end_time: string
+      room: {
+        id: string
+        name: string
+        type: string
+        surgical_center_id: string
+      }
+      available_professionals: Array<{
+        id: string
+        name: string
+        role: string[]
+        email?: string
+        phone?: string
+      }>
+      available_equipment: Array<{
+        id: string
+        name: string
+        type: string
+        group_name?: string
+      }>
+      conflicts: any[]
+      score: number
+    }>
+    filters_applied: any
+    summary: {
+      total_slots_found: number
+      average_score: number
+    }
+  }> {
+    try {
+      const response = await api.post('/schedule-surgery/availability', {
+        surgical_center_id: params.surgical_center_id,
+        hospital_id: params.hospital_id || HOSPITAL_ID,
+        ...(params.room_id && { room_id: params.room_id }),
+        ...(params.room_type && { room_type: params.room_type }),
+        date_from: params.date_from,
+        date_to: params.date_to,
+        ...(params.duration_minutes && { duration_minutes: params.duration_minutes }),
+        ...(params.required_professionals && { required_professionals: params.required_professionals }),
+        ...(params.required_roles && { required_roles: params.required_roles }),
+        ...(params.required_equipment && { required_equipment: params.required_equipment }),
+        ...(params.required_equipment_groups && { required_equipment_groups: params.required_equipment_groups }),
+        max_suggestions: params.max_suggestions ?? 5,
+        buffer_time: params.buffer_time ?? 30,
+      })
+      return response.data
+    } catch (error) {
+      console.error('Error fetching availability:', error)
+      throw error
+    }
+  },
+}

@@ -1,15 +1,15 @@
-export type Sala = { id: number; nome: string };
+export type Sala = { id: string; nome: string };
 
-export type Medico = { id: number; nome: string };
+export type Medico = { id: string; nome: string };
 
-export type CentroCirurgico = { id: number; nome: string };
+export type CentroCirurgico = { id: string; nome: string };
 
 export type Slot = {
   inicio: string; // ISO
   fim: string; // ISO
   score?: number;
-  salaId?: number;
-  responsavelId?: number;
+  salaId?: string;
+  responsavelId?: string;
   medicoNome?: string;
   salaNome?: string;
 };

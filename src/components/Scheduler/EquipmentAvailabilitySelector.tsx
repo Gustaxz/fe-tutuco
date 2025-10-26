@@ -62,81 +62,11 @@ export default function EquipmentAvailabilitySelector({
 
   return (
     <div className="grid grid-cols-1 gap-6">
-      {/* Recursos Reutilizáveis */}
-      <section>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-medium">Recursos Reutilizáveis</h3>
-          <Button onClick={() => setOpenRec(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Adicionar
-          </Button>
-        </div>
-
-        <div className="rounded-2xl border overflow-auto max-h-80 relative">
-          <table className="w-full text-sm table-fixed">
-            <colgroup>
-              <col className="w-[60%]" />
-              <col className="w-28" />
-              <col className="w-36" />
-              <col className="w-24" />
-            </colgroup>
-            <thead className="sticky top-0 z-20 border-b bg-background supports-[backdrop-filter]:bg-background/80 backdrop-blur">
-              <tr className="text-left">
-                <th className="p-3 whitespace-nowrap bg-inherit">Recurso</th>
-                <th className="p-3 whitespace-nowrap bg-inherit">Origem</th>
-                <th className="p-3 whitespace-nowrap bg-inherit">
-                  Disponibilidade
-                </th>
-                <th className="p-3 whitespace-nowrap bg-inherit"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {recursos.map((r) => (
-                <tr key={r.id} className="border-t">
-                  <td className="p-3">{r.nome}</td>
-                  <td>{r.externo ? "Externo" : "Próprio"}</td>
-                  <td>
-                    {r.disponivel ? (
-                      <span className="text-green-600 text-xs inline-flex items-center gap-1">
-                        <Check className="h-3 w-3" /> Disponível
-                      </span>
-                    ) : (
-                      <span className="text-red-600 text-xs inline-flex items-center gap-1">
-                        <X className="h-3 w-3" /> Bloqueado
-                      </span>
-                    )}
-                  </td>
-                  <td className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removerRecurso(r.id)}
-                    >
-                      Remover
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-
-              {recursos.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={4}
-                    className="p-4 text-center text-xs text-muted-foreground"
-                  >
-                    Nenhum recurso adicionado.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
 
       {/* Itens Descartáveis */}
       <section>
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-medium">Itens Descartáveis</h3>
+          <h3 className="font-medium">Itens</h3>
           <Button onClick={() => setOpenDesc(true)}>
             <Plus className="h-4 w-4 mr-2" /> Adicionar
           </Button>
@@ -205,17 +135,6 @@ export default function EquipmentAvailabilitySelector({
         </div>
       </section>
 
-      {/* Modais */}
-      <SearchEquipmentModal
-        open={openRec}
-        onClose={() => setOpenRec(false)}
-        janela={janela}
-        onSelect={(lista) => {
-          const ids = new Set(recursos.map((a) => a.id));
-          const novos = lista.filter((n) => !ids.has(n.id));
-          onChangeRecursos([...recursos, ...novos]);
-        }}
-      />
 
       <SearchDisposableModal
         open={openDesc}

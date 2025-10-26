@@ -28,7 +28,9 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { translateRole } from "../../../utils/roleMapper";
 import { FuncionarioService } from "@/api/FuncionarioService";
+import { ScheduleApiService } from "@/api/ScheduleApi";
 
 type Props = {
   open: boolean;
@@ -71,33 +73,32 @@ export default function SearchEmployeesModal({
     setLoading(true);
     setBuscouAoMenosUmaVez(true);
     try {
-      // const lista = await searchFuncionarios({
-      //   inicio: janela.inicio,
-      //   fim: janela.fim,
-      //   interno,
-      //   especialidadeId,
-      //   nome,
-      // });
+      // Map filters to API query params
+      const type = interno ? 'OWNED' : 'THIRD_PARTY'
+      const roles = especialidadeId ? String(especialidadeId) : undefined // id here encodes index; upstream caller provides mapping
 
-      const lista = await FuncionarioService.search({
-          inicio: janela.inicio,
-          fim: janela.fim,
-          interno,
-          especialidadeId,
-          nome,
-        });
+      const pros = await ScheduleApiService.getProfessionals({
+        available: true,
+        ...(roles ? { roles } : {}),
+        type,
+      })
 
-      lista.sort(
-        (a, b) =>
-          Number(b.disponivel) - Number(a.disponivel) ||
-          a.nome.localeCompare(b.nome)
-      );
-      setResultado(lista);
+      // Adapt professionals to Funcionario shape used by this modal
+      const lista: Funcionario[] = pros.map((p, idx) => ({
+        id: idx + 1, // local id for selection purposes
+        nome: p.name,
+        interno: (p.type ?? 'OWNED') === 'OWNED',
+        disponivel: true,
+        especialidades: [],
+      }))
+
+      lista.sort((a, b) => a.nome.localeCompare(b.nome))
+      setResultado(lista)
       setSelecionados((prev) => {
-        const next: Record<number, boolean> = {};
-        for (const f of lista) next[f.id] = !!prev[f.id];
-        return next;
-      });
+        const next: Record<number, boolean> = {}
+        for (const f of lista) next[f.id] = !!prev[f.id]
+        return next
+      })
     } finally {
       setLoading(false);
     }
@@ -159,9 +160,9 @@ export default function SearchEmployeesModal({
                 </Tabs>
               </div>
 
-              {/* Especialidade (Select funcional) */}
+              {/* Cargo (Select funcional) */}
               <div className="col-span-12">
-                <Label>Especialidade (opcional)</Label>
+                <Label>Cargo (opcional)</Label>
                 <Select
                   value={
                     especialidadeId === undefined
@@ -176,20 +177,12 @@ export default function SearchEmployeesModal({
                     <SelectValue placeholder="Selecione..." />
                   </SelectTrigger>
                   <SelectContent className="z-[9999]">
-                    <SelectItem value="todas">Todas</SelectItem>
-                    {especialidades?.length > 0 ? (
-                      especialidades.map((esp) => (
-                        <SelectItem key={esp.id} value={String(esp.id)}>
-                          {esp.nome}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <>
-                        <SelectItem value="1">Anestesiologia</SelectItem>
-                        <SelectItem value="2">Cardiologia</SelectItem>
-                        <SelectItem value="3">Ortopedia</SelectItem>
-                      </>
-                    )}
+                    <SelectItem value="todas">Todos</SelectItem>
+                    {especialidades?.map((esp) => (
+                      <SelectItem key={esp.id} value={String(esp.id)}>
+                        {translateRole(esp.nome)}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

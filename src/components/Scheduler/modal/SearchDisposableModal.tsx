@@ -17,6 +17,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Filter, Loader2, RotateCcw } from "lucide-react";
 import { RecursoService } from "@/api/RecursoService ";
+import { ScheduleApiService } from "@/api/ScheduleApi";
 import type { Recurso } from "../types";
 import {
   Select,
@@ -79,20 +80,28 @@ export default function SearchDisposableModal({
     setLoading(true);
     setBuscou(true);
     try {
-      const lista = await RecursoService.search({
-        inicio: janela.inicio,
-        fim: janela.fim,
-        externo,
-        grupoId,
-        nome,
-        disposable: true,
-      });
-      setResultado(lista);
+      const type = externo === undefined ? undefined : externo ? 'THIRD_PARTY' : 'OWNED'
+      const equipments = await ScheduleApiService.getEquipment({ type })
+      // Filter client-side by name if provided (show all items from API)
+      const filtered = equipments
+        .filter(e => (nome ? e.name.toLowerCase().includes(nome.toLowerCase()) : true))
+
+      // Adapt to Recurso[] expected by UI
+      const lista: Recurso[] = filtered.map((e, idx) => ({
+        id: idx + 1,
+        nome: e.name,
+        externo: e.type === 'THIRD_PARTY',
+        disponivel: true,
+        grupoId: undefined,
+        estoque: 1,
+      }))
+
+      setResultado(lista)
       setSelecionados((prev) => {
-        const next: Record<number, boolean> = {};
-        for (const r of lista) next[r.id] = !!prev[r.id];
-        return next;
-      });
+        const next: Record<number, boolean> = {}
+        for (const r of lista) next[r.id] = !!prev[r.id]
+        return next
+      })
     } finally {
       setLoading(false);
     }
@@ -122,7 +131,7 @@ export default function SearchDisposableModal({
           {/* Cabeçalho */}
           <div className="p-6 border-b">
             <DialogHeader>
-              <DialogTitle>Buscar Itens Descartáveis</DialogTitle>
+              <DialogTitle>Buscar Itens</DialogTitle>
               <DialogDescription>
                 Selecione um ou mais itens descartáveis disponíveis para o
                 procedimento. Janela:&nbsp;
@@ -166,7 +175,7 @@ export default function SearchDisposableModal({
               </div>
 
               {/* Grupo */}
-              <div className="col-span-12">
+              {/* <div className="col-span-12">
                 <Label>Grupo (opcional)</Label>
                 <Select
                   value={grupoId === undefined ? "todos" : String(grupoId)}
@@ -186,7 +195,7 @@ export default function SearchDisposableModal({
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
+              </div> */}
 
               {/* Nome */}
               <div className="col-span-12">
